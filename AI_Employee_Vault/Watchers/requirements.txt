@@ -1,0 +1,24 @@
+# AI Employee Watchers - Python Dependencies
+
+# Core
+python-dotenv>=1.0.0
+
+# File system watching
+watchdog>=3.0.0
+
+# Gmail API (for gmail_watcher)
+google-api-python-client>=2.100.0
+google-auth-httplib2>=0.1.0
+google-auth-oauthlib>=1.1.0
+
+# WhatsApp automation (for whatsapp_watcher)
+playwright>=1.40.0
+
+# HTTP requests
+requests>=2.31.0
+
+# Scheduling
+schedule>=1.2.0
+
+# Process management (optional)
+psutil>=5.9.0

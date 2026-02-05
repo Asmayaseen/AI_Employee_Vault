@@ -1,0 +1,41 @@
+# Environment and secrets
+.env
+*.env
+credentials.json
+token.json
+*.pem
+*.key
+
+# WhatsApp session data
+whatsapp_session/
+session/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+ENV/
+
+# Node
+node_modules/
+npm-debug.log
+
+# Obsidian
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs (keep structure, ignore content)
+Logs/*.json
+!Logs/.gitkeep
+
+# Temporary files
+*.tmp
+*.temp
+*.bak

@@ -1,0 +1,14 @@
+INVOICE #2026-001
+==================
+
+From: ABC Company
+To: Client XYZ
+Date: 2026-02-05
+
+Services Rendered:
+- Web Development: $500
+- Consulting: $200
+
+Total: $700
+
+Payment Terms: Net 30

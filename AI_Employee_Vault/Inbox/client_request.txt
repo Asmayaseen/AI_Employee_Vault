@@ -1,0 +1,18 @@
+CLIENT REQUEST
+==============
+From: Ahmed Khan
+Date: 2026-02-05
+Subject: Website Update Needed
+
+Assalam o Alaikum,
+
+Please update the following on our company website:
+1. Change contact number to: 0321-1234567
+2. Add new product page for "Premium Package"
+3. Update pricing on services page
+
+Priority: HIGH
+Deadline: This week
+
+JazakAllah,
+Ahmed Khan

@@ -1,163 +1,626 @@
 ---
-description: Generate an actionable, dependency-ordered tasks.md for the feature based on available design artifacts.
-handoffs: 
-  - label: Analyze For Consistency
-    agent: sp.analyze
-    prompt: Run a project analysis for consistency
-    send: true
-  - label: Implement Project
-    agent: sp.implement
-    prompt: Start the implementation in phases
-    send: true
+command: /sp.tasks
+type: task_generator
+created: 2026-02-05
+status: active
+version: 1.0.0
 ---
 
-## User Input
+# /sp.tasks - Task List Generator
 
-```text
-$ARGUMENTS
-```
-
-You **MUST** consider the user input before proceeding (if not empty).
-
-## Outline
-
-1. **Setup**: Run `.specify/scripts/powershell/check-prerequisites.ps1 -Json` from repo root and parse FEATURE_DIR and AVAILABLE_DOCS list. All paths must be absolute. For single quotes in args like "I'm Groot", use escape syntax: e.g 'I'\''m Groot' (or double-quote if possible: "I'm Groot").
-
-2. **Load design documents**: Read from FEATURE_DIR:
-   - **Required**: plan.md (tech stack, libraries, structure), spec.md (user stories with priorities)
-   - **Optional**: data-model.md (entities), contracts/ (API endpoints), research.md (decisions), quickstart.md (test scenarios)
-   - Note: Not all projects have all documents. Generate tasks based on what's available.
-
-3. **Execute task generation workflow**:
-   - Load plan.md and extract tech stack, libraries, project structure
-   - Load spec.md and extract user stories with their priorities (P1, P2, P3, etc.)
-   - If data-model.md exists: Extract entities and map to user stories
-   - If contracts/ exists: Map endpoints to user stories
-   - If research.md exists: Extract decisions for setup tasks
-   - Generate tasks organized by user story (see Task Generation Rules below)
-   - Generate dependency graph showing user story completion order
-   - Create parallel execution examples per user story
-   - Validate task completeness (each user story has all needed tasks, independently testable)
-
-4. **Generate tasks.md**: Use `.specify/templates/tasks-template.md` as structure, fill with:
-   - Correct feature name from plan.md
-   - Phase 1: Setup tasks (project initialization)
-   - Phase 2: Foundational tasks (blocking prerequisites for all user stories)
-   - Phase 3+: One phase per user story (in priority order from spec.md)
-   - Each phase includes: story goal, independent test criteria, tests (if requested), implementation tasks
-   - Final Phase: Polish & cross-cutting concerns
-   - All tasks must follow the strict checklist format (see Task Generation Rules below)
-   - Clear file paths for each task
-   - Dependencies section showing story completion order
-   - Parallel execution examples per story
-   - Implementation strategy section (MVP first, incremental delivery)
-
-5. **Report**: Output path to generated tasks.md and summary:
-   - Total task count
-   - Task count per user story
-   - Parallel opportunities identified
-   - Independent test criteria for each story
-   - Suggested MVP scope (typically just User Story 1)
-   - Format validation: Confirm ALL tasks follow the checklist format (checkbox, ID, labels, file paths)
-
-Context for task generation: $ARGUMENTS
-
-The tasks.md should be immediately executable - each task must be specific enough that an LLM can complete it without additional context.
-
-## Task Generation Rules
-
-**CRITICAL**: Tasks MUST be organized by user story to enable independent implementation and testing.
-
-**Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the feature specification or if user requests TDD approach.
-
-### Checklist Format (REQUIRED)
-
-Every task MUST strictly follow this format:
-
-```text
-- [ ] [TaskID] [P?] [Story?] Description with file path
-```
-
-**Format Components**:
-
-1. **Checkbox**: ALWAYS start with `- [ ]` (markdown checkbox)
-2. **Task ID**: Sequential number (T001, T002, T003...) in execution order
-3. **[P] marker**: Include ONLY if task is parallelizable (different files, no dependencies on incomplete tasks)
-4. **[Story] label**: REQUIRED for user story phase tasks only
-   - Format: [US1], [US2], [US3], etc. (maps to user stories from spec.md)
-   - Setup phase: NO story label
-   - Foundational phase: NO story label  
-   - User Story phases: MUST have story label
-   - Polish phase: NO story label
-5. **Description**: Clear action with exact file path
-
-**Examples**:
-
-- ✅ CORRECT: `- [ ] T001 Create project structure per implementation plan`
-- ✅ CORRECT: `- [ ] T005 [P] Implement authentication middleware in src/middleware/auth.py`
-- ✅ CORRECT: `- [ ] T012 [P] [US1] Create User model in src/models/user.py`
-- ✅ CORRECT: `- [ ] T014 [US1] Implement UserService in src/services/user_service.py`
-- ❌ WRONG: `- [ ] Create User model` (missing ID and Story label)
-- ❌ WRONG: `T001 [US1] Create model` (missing checkbox)
-- ❌ WRONG: `- [ ] [US1] Create User model` (missing Task ID)
-- ❌ WRONG: `- [ ] T001 [US1] Create model` (missing file path)
-
-### Task Organization
-
-1. **From User Stories (spec.md)** - PRIMARY ORGANIZATION:
-   - Each user story (P1, P2, P3...) gets its own phase
-   - Map all related components to their story:
-     - Models needed for that story
-     - Services needed for that story
-     - Endpoints/UI needed for that story
-     - If tests requested: Tests specific to that story
-   - Mark story dependencies (most stories should be independent)
-
-2. **From Contracts**:
-   - Map each contract/endpoint → to the user story it serves
-   - If tests requested: Each contract → contract test task [P] before implementation in that story's phase
-
-3. **From Data Model**:
-   - Map each entity to the user story(ies) that need it
-   - If entity serves multiple stories: Put in earliest story or Setup phase
-   - Relationships → service layer tasks in appropriate story phase
-
-4. **From Setup/Infrastructure**:
-   - Shared infrastructure → Setup phase (Phase 1)
-   - Foundational/blocking tasks → Foundational phase (Phase 2)
-   - Story-specific setup → within that story's phase
-
-### Phase Structure
-
-- **Phase 1**: Setup (project initialization)
-- **Phase 2**: Foundational (blocking prerequisites - MUST complete before user stories)
-- **Phase 3+**: User Stories in priority order (P1, P2, P3...)
-  - Within each story: Tests (if requested) → Models → Services → Endpoints → Integration
-  - Each phase should be a complete, independently testable increment
-- **Final Phase**: Polish & Cross-Cutting Concerns
+## Purpose
+Generate actionable, dependency-ordered task lists from implementation plans, organizing work into executable chunks with clear acceptance criteria and parallel execution opportunities.
 
 ---
 
-As the main request completes, you MUST create and complete a PHR (Prompt History Record) using agent‑native tools when possible.
+## Command Usage
 
-1) Determine Stage
-   - Stage: constitution | spec | plan | tasks | red | green | refactor | explainer | misc | general
+```bash
+/sp.tasks <feature-name> [--plan-file "path/to/plan.md"]
+```
 
-2) Generate Title and Determine Routing:
-   - Generate Title: 3–7 words (slug for filename)
-   - Route is automatically determined by stage:
-     - `constitution` → `history/prompts/constitution/`
-     - Feature stages → `history/prompts/<feature-name>/` (spec, plan, tasks, red, green, refactor, explainer, misc)
-     - `general` → `history/prompts/general/`
+### Examples
+```bash
+/sp.tasks gmail-watcher
+/sp.tasks ceo-briefing --plan-file "/Plans/PLAN_ceo_briefing_implementation.md"
+/sp.tasks odoo-integration
+```
 
-3) Create and Fill PHR (Shell first; fallback agent‑native)
-   - Run: `.specify/scripts/bash/create-phr.sh --title "<title>" --stage <stage> [--feature <name>] --json`
-   - Open the file and fill remaining placeholders (YAML + body), embedding full PROMPT_TEXT (verbatim) and concise RESPONSE_TEXT.
-   - If the script fails:
-     - Read `.specify/templates/phr-template.prompt.md` (or `templates/…`)
-     - Allocate an ID; compute the output path based on stage from step 2; write the file
-     - Fill placeholders and embed full PROMPT_TEXT and concise RESPONSE_TEXT
+---
 
-4) Validate + report
-   - No unresolved placeholders; path under `history/prompts/` and matches stage; stage/title/date coherent; print ID + path + stage + title.
-   - On failure: warn, don't block. Skip only for `/sp.phr`.
+## What This Command Does
+
+### 1. Load Implementation Plan
+- Read `/Plans/PLAN_<feature-name>_implementation.md`
+- Extract phases and steps
+- Identify dependencies
+- Note architecture decisions
+
+### 2. Break Down into Tasks
+- Convert plan phases into discrete tasks
+- Each task = 15-60 minutes of work
+- Add file paths and specific actions
+- Include acceptance criteria
+- Mark parallel execution opportunities
+
+### 3. Organize by Dependencies
+- **Setup Phase:** Infrastructure tasks (no dependencies)
+- **Foundation Phase:** Core components (blocks everything)
+- **Implementation Phases:** Feature tasks (organized by P1/P2/P3)
+- **Polish Phase:** Cross-cutting concerns (after all features)
+
+### 4. Identify Parallel Work
+- Mark tasks with `[P]` if they can run in parallel
+- Group related tasks
+- Show dependency chains
+- Optimize for team/agent coordination
+
+### 5. Create Task List
+- Generate `/Tasks/TASKS_<feature-name>.md`
+- Checkbox format for tracking
+- Clear file paths and actions
+- Dependency graph
+- Estimated time per task
+
+---
+
+## Task List Structure Generated
+
+```markdown
+# Tasks: <Feature Name>
+
+**Input:** `/Plans/PLAN_<feature-name>_implementation.md`
+**Total Estimate:** X hours
+**Parallel Opportunities:** Y tasks
+
+## Format: `[ID] [P?] [Phase] Description`
+- **[P]:** Can run in parallel
+- **[Phase]:** Setup | Foundation | P1 | P2 | P3 | Polish
+
+---
+
+## Phase 1: Setup (X min)
+Purpose: Initialize project structure
+
+- [ ] T001 Create project folder structure: `/path/to/module/`
+- [ ] T002 [P] Initialize configuration: `config.yaml`
+- [ ] T003 [P] Setup logging: `/Logs/ModuleName.log`
+
+---
+
+## Phase 2: Foundation (X hours)
+Purpose: Core infrastructure (BLOCKS all implementation)
+
+⚠️ CRITICAL: No feature work until this phase complete
+
+- [ ] T004 Implement BaseClass in `/path/to/base.py`
+- [ ] T005 Setup authentication in `/path/to/auth.py`
+- [ ] T006 [P] Create utility functions in `/path/to/utils.py`
+
+**Checkpoint:** Foundation ready - implementation can begin
+
+---
+
+## Phase 3: P1 Implementation (X hours)
+Purpose: Critical user scenarios
+
+### User Story 1 (P1)
+- [ ] T007 [P] Implement function X in `/path/file.py:line`
+- [ ] T008 [P] Implement function Y in `/path/file.py:line`
+- [ ] T009 Test user story 1 end-to-end
+
+### User Story 2 (P1)
+- [ ] T010 Implement feature Z (depends on T009)
+
+---
+
+## Phase 4: P2 Implementation (X hours)
+Purpose: Important enhancements
+
+- [ ] T011 [P] Feature A
+- [ ] T012 [P] Feature B
+
+---
+
+## Phase 5: Polish (X min)
+Purpose: Documentation and refinement
+
+- [ ] T013 [P] Write README.md
+- [ ] T014 [P] Update Dashboard.md
+- [ ] T015 Add to history_context.md
+
+---
+
+## Dependencies
+
+### Critical Path:
+Setup → Foundation → P1 User Story 1 → P1 User Story 2 → Polish
+
+### Parallel Opportunities:
+- T002, T003 can run together
+- T007, T008 can run together
+- T011, T012 can run together
+
+### Blockers:
+- Foundation (Phase 2) blocks all implementation
+- Each user story blocks dependent stories
+- Tests block progression to next story
+
+---
+
+## Execution Order
+
+**Single Developer:**
+T001 → T002 → T003 → T004 → T005 → T006 → ...
+
+**Parallel Execution (if multiple agents):**
+```
+Round 1: T001
+Round 2: T002, T003 (parallel)
+Round 3: T004
+Round 4: T005, T006 (parallel)
+Round 5: T007, T008 (parallel)
+...
+```
+```
+
+---
+
+## Input Sources
+
+### Required:
+1. **Implementation Plan:** `/Plans/PLAN_<feature-name>_implementation.md`
+   - Phases and steps
+   - Dependencies
+   - Timeline estimates
+
+2. **Feature Spec:** `/Specs/<feature-name>_spec.md`
+   - User scenarios (P1/P2/P3)
+   - Acceptance criteria
+
+### Context:
+3. **Codebase:** Existing file structure
+4. **Constitution:** Task size guidelines (15-60 min)
+5. **History:** Lessons on task breakdown
+
+---
+
+## Output Files Created
+
+### 1. Task List
+**Location:** `/Tasks/TASKS_<feature-name>.md`
+**Content:**
+- Numbered task list with checkboxes
+- File paths and line numbers (where applicable)
+- Parallel execution markers `[P]`
+- Phase grouping
+- Dependency documentation
+- Time estimates per task
+
+### 2. Implementation Trigger (automatic)
+**After tasks approved:** Suggest `/sp.implement` to begin execution
+
+---
+
+## Task Breakdown Rules
+
+### Task Size Guidelines:
+- **Minimum:** 15 minutes (smaller = merge with related task)
+- **Maximum:** 60 minutes (larger = break into subtasks)
+- **Sweet spot:** 30 minutes (focused, testable unit of work)
+
+### Task Granularity:
+```python
+# TOO LARGE (2+ hours):
+- [ ] Implement Gmail watcher
+
+# GOOD (30-60 min each):
+- [ ] T001 Setup Gmail API authentication
+- [ ] T002 Implement email fetching function
+- [ ] T003 Implement action file creation
+- [ ] T004 Add error handling and logging
+- [ ] T005 Test with real Gmail account
+```
+
+### When to Split Tasks:
+- Multiple file modifications
+- Multiple logical steps
+- Long estimated time (>60 min)
+- Complex testing required
+- Multiple technologies involved
+
+### When to Merge Tasks:
+- Same file, adjacent lines
+- Same logical unit
+- Total time <15 minutes
+- Trivial changes
+
+---
+
+## Parallel Execution Detection
+
+### Mark as `[P]` if:
+✅ No shared files being edited
+✅ No dependencies on each other
+✅ Can be tested independently
+✅ No shared state modifications
+
+### Examples:
+
+**Parallel:**
+```markdown
+- [ ] T001 [P] Create models/user.py
+- [ ] T002 [P] Create models/invoice.py
+```
+(Different files, no dependencies)
+
+**Sequential:**
+```markdown
+- [ ] T003 Create database schema
+- [ ] T004 Write migration script (depends on T003)
+```
+(T004 needs T003 complete)
+
+---
+
+## Dependency Management
+
+### Types of Dependencies:
+
+1. **Blocking (Foundation):**
+   ```
+   Setup → Foundation (BLOCKS EVERYTHING) → Implementation
+   ```
+
+2. **Sequential (Within Phase):**
+   ```
+   T005 → T006 → T007
+   ```
+
+3. **Parallel (Independent):**
+   ```
+        ┌─ T008
+   T007 ┤
+        └─ T009
+   ```
+
+4. **Convergent (Join Point):**
+   ```
+   T010 ┐
+   T011 ┼→ T012
+   T013 ┘
+   ```
+
+### Dependency Notation:
+```markdown
+- [ ] T005 Implement feature X
+- [ ] T006 Test feature X (depends on T005)
+- [ ] T007 [P] Implement feature Y (can run parallel to T005-T006)
+```
+
+---
+
+## Acceptance Criteria per Task
+
+Each task includes:
+
+### What Success Looks Like:
+```markdown
+- [ ] T001 Implement authentication function
+
+**Acceptance Criteria:**
+- Function exists in `/src/auth.py`
+- Takes username/password parameters
+- Returns auth token or error
+- Handles invalid credentials gracefully
+- Logs all auth attempts
+- Unit test passes
+```
+
+### Task Checklist Template:
+```markdown
+- [ ] TXXX [P?] [Phase] Task description
+
+**File:** `/path/to/file.py` (or new file to create)
+**Time:** X minutes
+**Dependencies:** TYYY (if any)
+
+**What to do:**
+1. Specific action 1
+2. Specific action 2
+3. Specific action 3
+
+**Acceptance:**
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3
+
+**Testing:**
+- [ ] Unit test: `pytest tests/test_module.py::test_function`
+```
+
+---
+
+## Example: Gmail Watcher Task List
+
+**Input Plan:** `/Plans/PLAN_gmail_watcher_implementation.md`
+
+**Generated Tasks:**
+
+```markdown
+# Tasks: Gmail Watcher
+
+**Total Estimate:** 10 hours
+**Parallel Opportunities:** 5 tasks
+
+---
+
+## Phase 1: Setup (30 min)
+
+- [ ] T001 Create folder structure
+  - `/AI_Employee_Code/watchers/gmail/`
+  - `__init__.py`, `gmail_watcher.py`, `config.py`
+
+- [ ] T002 [P] Create credentials folder
+  - `/AI_Employee_Code/credentials/`
+  - Add to `.gitignore`
+
+- [ ] T003 [P] Install dependencies
+  - `pip install google-auth-oauthlib google-api-python-client`
+
+---
+
+## Phase 2: Foundation (2 hours)
+
+⚠️ BLOCKS all implementation
+
+- [ ] T004 Setup Gmail API in Google Cloud Console
+  - Enable Gmail API
+  - Create OAuth 2.0 credentials
+  - Download credentials.json
+  - **Time:** 30 min
+
+- [ ] T005 Implement authentication function
+  - **File:** `/watchers/gmail/gmail_watcher.py`
+  - OAuth flow with token persistence
+  - **Time:** 60 min
+
+- [ ] T006 Test authentication
+  - Browser OAuth consent working
+  - Token saved to token.json
+  - **Time:** 30 min
+
+**Checkpoint:** Authentication working ✅
+
+---
+
+## Phase 3: P1 Implementation - Email Detection (4 hours)
+
+### Core Watcher Logic
+
+- [ ] T007 [P] Create GmailWatcher class
+  - **File:** `/watchers/gmail/gmail_watcher.py`
+  - Inherit from BaseWatcher
+  - Initialize Gmail API service
+  - **Time:** 45 min
+
+- [ ] T008 [P] Implement check_for_updates()
+  - Query for "is:unread is:important"
+  - Filter already processed IDs
+  - Return list of new emails
+  - **Time:** 60 min
+
+- [ ] T009 Implement create_action_file()
+  - Extract email metadata (from, subject, body)
+  - Create structured markdown with YAML frontmatter
+  - Save to `/Needs_Action/EMAIL_*.md`
+  - **Time:** 60 min
+  - **Depends on:** T007, T008
+
+- [ ] T010 Add logging
+  - Log all API calls
+  - Log file creations
+  - Error logging
+  - **Time:** 30 min
+
+### Testing
+
+- [ ] T011 Test with real Gmail account
+  - Send test email marked important
+  - Verify detection within 2 minutes
+  - Check action file created correctly
+  - **Time:** 45 min
+  - **Depends on:** T009
+
+---
+
+## Phase 4: P2 Implementation - Reliability (2 hours)
+
+- [ ] T012 [P] Implement duplicate prevention
+  - Track processed message IDs
+  - Persist to file or memory
+  - **Time:** 30 min
+
+- [ ] T013 [P] Add error handling
+  - API rate limit handling
+  - Network error retry (exponential backoff)
+  - Token expiry handling
+  - **Time:** 45 min
+
+- [ ] T014 Add health check logging
+  - Log every check cycle
+  - Log success/failure counts
+  - **Time:** 15 min
+
+---
+
+## Phase 5: Deployment (1.5 hours)
+
+- [ ] T015 Create PM2 configuration
+  - **File:** `ecosystem.config.js`
+  - Configure restart policy
+  - **Time:** 30 min
+
+- [ ] T016 Test PM2 supervision
+  - Start watcher with PM2
+  - Verify auto-restart on crash
+  - Check logs via `pm2 logs`
+  - **Time:** 30 min
+
+- [ ] T017 Integration test
+  - Full end-to-end test
+  - Multiple emails
+  - Verify no duplicates
+  - **Time:** 30 min
+
+---
+
+## Phase 6: Polish (1 hour)
+
+- [ ] T018 [P] Write README.md
+  - Setup instructions
+  - Configuration guide
+  - **Time:** 20 min
+
+- [ ] T019 [P] Update Dashboard.md
+  - Add Gmail watcher status
+  - **Time:** 10 min
+
+- [ ] T020 [P] Update history_context.md
+  - Document implementation
+  - Note lessons learned
+  - **Time:** 20 min
+
+- [ ] T021 Create usage documentation
+  - How to configure important filters
+  - How to monitor logs
+  - **Time:** 10 min
+
+---
+
+## Dependencies
+
+**Critical Path:**
+T001 → T004 → T005 → T006 → T007 → T008 → T009 → T011 → T015 → T016 → T017
+
+**Parallel Opportunities:**
+- Round 1: T002, T003 (with T001)
+- Round 2: T007, T008 (after T006)
+- Round 3: T012, T013 (after T011)
+- Round 4: T018, T019, T020 (final polish)
+
+**Blockers:**
+- T006 (auth test) blocks all implementation
+- T011 (integration test) blocks deployment
+- T017 (final test) blocks polish
+
+---
+
+## Execution Order
+
+**Solo Implementation:**
+T001 → T002 → T003 → T004 → T005 → T006 → T007 → T008 → T009 → T010 → T011 → T012 → T013 → T014 → T015 → T016 → T017 → T018 → T019 → T020 → T021
+
+**Time Savings with Parallel:**
+- Sequential: 10 hours
+- With parallel: ~8.5 hours (15% faster)
+```
+
+---
+
+## Workflow Integration
+
+```
+/sp.specify → /sp.plan → /sp.tasks → /sp.implement
+                              ↓
+                        Task list created
+                              ↓
+                        Human reviews
+                              ↓
+                   ┌──────────┴──────────┐
+                   ↓                     ↓
+              Approved            Need changes?
+                   ↓                     ↓
+            /sp.implement          Revise tasks
+```
+
+---
+
+## Best Practices
+
+### Do's ✅
+- Keep tasks 15-60 minutes each
+- Include specific file paths
+- Add clear acceptance criteria
+- Mark parallel opportunities
+- Document dependencies
+- Estimate conservatively
+- Include testing tasks
+- Add documentation tasks
+
+### Don'ts ❌
+- Don't create tasks >60 minutes
+- Don't skip file path specification
+- Don't forget testing steps
+- Don't ignore parallel opportunities
+- Don't omit documentation tasks
+- Don't create tasks <15 minutes (merge them)
+
+---
+
+## Skill Growth Notes
+
+### What This Command Teaches AI:
+- How to break plans into tasks
+- How to identify dependencies
+- How to estimate task duration
+- How to find parallel execution opportunities
+- How to write clear acceptance criteria
+
+### Improvements Over Time:
+- More accurate time estimates
+- Better task granularity
+- Improved dependency detection
+- Cleaner parallel grouping
+- Better acceptance criteria
+
+---
+
+## Metrics to Track
+
+| Metric | Target | Current |
+|--------|--------|---------|
+| Task lists created per week | 2-4 | TBD |
+| Average tasks per feature | 15-25 | TBD |
+| Task completion rate | >90% | TBD |
+| Time estimate accuracy | ±20% | TBD |
+| Parallel execution utilization | >30% | TBD |
+
+---
+
+## Version History
+
+- **v1.0.0** (2026-02-05) - Initial command specification
+  - Core task generation logic
+  - Dependency management
+  - Parallel execution detection
+  - Acceptance criteria framework
+
+---
+
+## Related Documentation
+
+- **Input:** `/Plans/PLAN_<feature>_implementation.md`
+- **Output:** `/Tasks/TASKS_<feature>.md`
+- **Next Step:** `/Specs/sp.implement.md`
+- **Templates:** `.specify/templates/tasks-template.md`
+
+---
+
+**Status:** ✅ Active
+**Required for:** All features before implementation
+**Tier:** All tiers
+
+---
+
+*This command follows SpecKitPlus methodology for structured task generation*

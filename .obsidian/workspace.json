@@ -1,0 +1,218 @@
+{
+  "main": {
+    "id": "20572fa1d2c32cc7",
+    "type": "split",
+    "children": [
+      {
+        "id": "b4ba1286110586c6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9cfd589b5cacb4b0",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "10115ce3ea9d204d",
+    "type": "split",
+    "children": [
+      {
+        "id": "9f2c670e34d61ccd",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fc83484399751fde",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "2423fc9889da5431",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "f47655f87eef24b8",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "d495c5b1816fa199",
+    "type": "split",
+    "children": [
+      {
+        "id": "6bf4a6b31733f710",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a678c2acf6e0362e",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "6e90ba465df3c1c0",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "db75330a4085a278",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "04a85ee939993fb1",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "d06c30b5d697fd27",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "9cfd589b5cacb4b0",
+  "lastOpenFiles": [
+    "history/prompts/002-silver-tier",
+    "specs/002-silver-tier/contracts",
+    "specs/002-silver-tier/checklists",
+    "specs/002-silver-tier",
+    "AI_Employee_Vault/Business_Goals.md",
+    "AI_Employee_Vault/Needs_Action/FILE_20260205_175742_test_invoice.md",
+    "check_bronze.sh",
+    "BRONZE_STATUS.md",
+    "BRONZE_TIER_CHECKLIST.md",
+    "PROJECT_READY.md",
+    "FIXED_SUMMARY.md",
+    "history/prompts/001-bronze-tier",
+    "specs/001-bronze-tier/contracts",
+    "specs/001-bronze-tier/checklists",
+    "specs/001-bronze-tier",
+    "AI_Employee_Vault/scripts",
+    "AI_Employee_Vault/schedulers",
+    "STRUCTURE_COMPARISON.md",
+    "PROJECT_STRUCTURE.md",
+    "specs/README.md",
+    "AI_Employee_Vault/Specs/sp.tasks.md",
+    "AI_Employee_Vault/Specs/sp.plan.md",
+    "AI_Employee_Vault/Specs/sp.specify.md",
+    "AI_Employee_Vault/README_START_HERE.md",
+    "AI_Employee_Vault/AI_EMPLOYEE_INITIALIZED.md",
+    "AI_Employee_Vault/Plans/PLAN_20260205_ahmed_khan_website_update.md",
+    "AI_Employee_Vault/Plans/PLAN_20260205_invoice_processing.md",
+    "AI_Employee_Vault/Specs/spec_template.md",
+    "AI_Employee_Vault/Prompts/history_context.md",
+    "PROJECT_STATUS.md",
+    "history/prompts/constitution/001-personal-ai-employee-constitution-creation.constitution.prompt.md",
+    "skills/platinum/PLATINUM_SKILLS_INDEX.md",
+    "skills/gold/GOLD_SKILLS_INDEX.md",
+    "skills/silver/SILVER_SKILLS_INDEX.md",
+    "skills/silver/silver-multi-watcher.skill.md",
+    "skills/bronze/bronze-watcher.skill.md"
+  ]
+}
