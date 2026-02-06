@@ -1,0 +1,108 @@
+# Environment Variables (CRITICAL - Never commit)
+.env
+.env.*
+*.env
+!.env.example
+
+# Credentials (CRITICAL - Never commit)
+credentials.json
+token.json
+**/credentials/*.json
+**/credentials/*.txt
+
+# API Keys and Secrets
+*_secret*
+*_password*
+*_token*
+*_key.txt
+
+# WhatsApp Session Data
+whatsapp_session/
+linkedin_session/
+
+# Logs with Potentially Sensitive Data
+*.log
+Logs/*.log
+Logs/*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv
+
+# Node.js (for MCP servers)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Obsidian
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary Files
+*.tmp
+*.temp
+.processed_files
+
+# PM2
+.pm2/
+
+# Test and Personal Data
+**/Inbox/*.txt
+**/Inbox/*.pdf
+**/Done/*
+test_*.md
+TEMP_*
+
+# Vault Sensitive Folders (may contain personal data)
+AI_Employee_Vault/Needs_Action/*
+!AI_Employee_Vault/Needs_Action/.gitkeep
+AI_Employee_Vault/Pending_Approval/*
+!AI_Employee_Vault/Pending_Approval/.gitkeep
+AI_Employee_Vault/Approved/*
+!AI_Employee_Vault/Approved/.gitkeep
+AI_Employee_Vault/Done/*
+!AI_Employee_Vault/Done/.gitkeep
+AI_Employee_Vault/Logs/*.json
+!AI_Employee_Vault/Logs/.gitkeep
+
+# Keep folder structure but not contents
+!**/.gitkeep

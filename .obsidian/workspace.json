@@ -11,10 +11,26 @@
             "id": "9cfd589b5cacb4b0",
             "type": "leaf",
             "state": {
-              "type": "empty",
+              "type": "graph",
               "state": {},
-              "icon": "lucide-file",
-              "title": "New tab"
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      },
+      {
+        "id": "31b32246a9d58efd",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dbefb198e39f773c",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
             }
           }
         ]
@@ -176,7 +192,7 @@
       "bases:Create new base": false
     }
   },
-  "active": "9cfd589b5cacb4b0",
+  "active": "dbefb198e39f773c",
   "lastOpenFiles": [
     "history/prompts/002-silver-tier",
     "specs/002-silver-tier/contracts",
