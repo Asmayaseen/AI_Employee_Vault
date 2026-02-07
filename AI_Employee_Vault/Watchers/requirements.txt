@@ -1,17 +1,19 @@
 # AI Employee Watchers - Python Dependencies
+# Silver Tier Complete
 
 # Core
 python-dotenv>=1.0.0
+pyyaml>=6.0.1
 
 # File system watching
 watchdog>=3.0.0
 
-# Gmail API (for gmail_watcher)
+# Gmail API (for gmail_watcher & email_mcp)
 google-api-python-client>=2.100.0
 google-auth-httplib2>=0.1.0
 google-auth-oauthlib>=1.1.0
 
-# WhatsApp automation (for whatsapp_watcher)
+# WhatsApp & LinkedIn automation (Playwright-based)
 playwright>=1.40.0
 
 # HTTP requests
@@ -19,6 +21,14 @@ requests>=2.31.0
 
 # Scheduling
 schedule>=1.2.0
+apscheduler>=3.10.0
 
-# Process management (optional)
+# Process management
 psutil>=5.9.0
+
+# Desktop notifications (optional)
+plyer>=2.1.0
+
+# Installation:
+# pip install -r requirements.txt
+# playwright install chromium
