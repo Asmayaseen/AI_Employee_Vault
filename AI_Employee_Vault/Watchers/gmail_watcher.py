@@ -20,6 +20,9 @@ from datetime import datetime
 from email.utils import parsedate_to_datetime
 from base_watcher import BaseWatcher
 
+# Allow HTTP for localhost (required for WSL/local development)
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 # Google API imports
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -95,7 +98,44 @@ class GmailWatcher(BaseWatcher):
                 flow = InstalledAppFlow.from_client_secrets_file(
                     str(self.credentials_path), SCOPES
                 )
-                creds = flow.run_local_server(port=0)
+
+                # Try to open browser, fallback to manual if WSL/headless
+                try:
+                    creds = flow.run_local_server(port=0)
+                except Exception as e:
+                    self.logger.warning(f"Could not open browser automatically: {e}")
+                    self.logger.info("")
+                    self.logger.info("=" * 70)
+                    self.logger.info("MANUAL AUTHENTICATION REQUIRED (WSL/Headless Environment)")
+                    self.logger.info("=" * 70)
+                    self.logger.info("")
+
+                    # Generate authorization URL
+                    auth_url, _ = flow.authorization_url(prompt='consent')
+
+                    self.logger.info("Please follow these steps:")
+                    self.logger.info("")
+                    self.logger.info("1. Copy this URL and open it in your Windows browser:")
+                    self.logger.info("")
+                    print(f"\n{auth_url}\n")
+                    self.logger.info("")
+                    self.logger.info("2. Login to your Google account")
+                    self.logger.info("3. You'll see: 'Google hasn't verified this app'")
+                    self.logger.info("   - Click 'Advanced'")
+                    self.logger.info("   - Click 'Go to AI Employee (unsafe)'")
+                    self.logger.info("4. Click 'Allow' for Gmail permissions")
+                    self.logger.info("5. After authorization, you'll be redirected to a URL")
+                    self.logger.info("   Copy the FULL URL from browser address bar")
+                    self.logger.info("")
+                    self.logger.info("=" * 70)
+                    self.logger.info("")
+
+                    # Get authorization response URL from user
+                    redirect_url = input("Paste the full redirect URL here: ").strip()
+
+                    # Extract code from URL
+                    flow.fetch_token(authorization_response=redirect_url)
+                    creds = flow.credentials
 
             # Save token
             self.token_path.write_text(creds.to_json())

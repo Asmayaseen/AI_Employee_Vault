@@ -1,0 +1,142 @@
+╔══════════════════════════════════════════════════════════════╗
+║         LinkedIn Watcher - WSL Quick Commands                ║
+╚══════════════════════════════════════════════════════════════╝
+
+🔧 ONE-TIME SETUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Windows pe VcXsrv download karo:
+   https://sourceforge.net/projects/vcxsrv/
+
+2. Install karo, phir XLaunch run karo:
+   - Multiple windows → Next
+   - Start no client → Next
+   - ✅ Disable access control (IMPORTANT!)
+   - Finish
+
+3. WSL Ubuntu me automatic setup:
+   cd /mnt/d/Ai-Employee/AI_Employee_Vault/Watchers
+   bash setup_wsl_linkedin.sh
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 DAILY USAGE COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Change to Watchers directory
+cd /mnt/d/Ai-Employee/AI_Employee_Vault/Watchers
+
+# Test configuration (no browser)
+python test_linkedin.py
+
+# Full test with browser (first time login needed)
+python test_linkedin.py --full
+
+# Run watcher continuously (checks every 60s)
+python linkedin_watcher.py ../
+
+# Stop watcher
+Ctrl+C
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 CHECK STATUS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Check if VcXsrv running
+nc -zv $(cat /etc/resolv.conf | grep nameserver | awk '{print $2}') 6000
+
+# Check DISPLAY variable
+echo $DISPLAY
+
+# Test X11 (should open window)
+xeyes
+
+# Check LinkedIn session exists
+ls -la .linkedin_session/
+
+# View LinkedIn watcher logs
+cat ../Logs/$(date +%Y-%m-%d).json | jq '.[] | select(.watcher=="LinkedInWatcher")'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# "Cannot open display"
+export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0
+xeyes  # Test again
+
+# VcXsrv not responding
+# → Windows pe VcXsrv restart karo (System tray me right-click → Exit)
+# → XLaunch phir se run karo with "Disable access control"
+
+# Clear LinkedIn session (re-login)
+rm -rf .linkedin_session/
+python test_linkedin.py --full
+
+# Browser crashes
+sudo mount -o remount,size=2G /dev/shm
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 BACKGROUND MODE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Run in background
+nohup python linkedin_watcher.py ../ > linkedin.log 2>&1 &
+
+# Check if running
+ps aux | grep linkedin_watcher
+
+# View logs
+tail -f linkedin.log
+
+# Stop background process
+pkill -f linkedin_watcher.py
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 CHECK ACTION FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# List LinkedIn action files
+ls -lh ../Needs_Action/LINKEDIN_*
+
+# View latest action file
+cat ../Needs_Action/LINKEDIN_*.md | tail -50
+
+# Count processed items
+wc -l ../.processed_linkedin
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 TIPS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. VcXsrv har baar Windows restart ke baad run karna hoga
+2. First time login manual karna padega (browser me)
+3. Session save ho jane ke baad automatic rahega
+4. Check interval: 60 seconds (LinkedIn rate limit ke liye safe)
+5. Dry run mode: true (testing ke liye safe)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📄 DOCUMENTATION FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SETUP_X_SERVER_WSL.md       - Detailed X Server setup guide
+LINKEDIN_WATCHER_STATUS.md  - Complete feature documentation
+setup_wsl_linkedin.sh        - Automatic setup script
+test_linkedin.py             - Test script
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 QUICK START (Copy-Paste)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+cd /mnt/d/Ai-Employee/AI_Employee_Vault/Watchers
+bash setup_wsl_linkedin.sh
+python test_linkedin.py --full
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -90,12 +90,17 @@ class LinkedInWatcher(BaseWatcher):
         if self._playwright is None:
             self._playwright = sync_playwright().start()
 
+            # Check if headless mode requested (for WSL without X Server)
+            use_headless = os.getenv('LINKEDIN_HEADLESS', 'false').lower() == 'true'
+
             self._browser = self._playwright.chromium.launch_persistent_context(
                 user_data_dir=str(self.session_path),
-                headless=False,  # Must be False for initial login
+                headless=use_headless,  # Can be set via LINKEDIN_HEADLESS env var
                 args=[
                     '--disable-blink-features=AutomationControlled',
-                    '--no-sandbox'
+                    '--no-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu'
                 ],
                 viewport={'width': 1280, 'height': 800}
             )

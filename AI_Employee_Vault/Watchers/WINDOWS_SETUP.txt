@@ -1,0 +1,174 @@
+╔══════════════════════════════════════════════════════════════╗
+║     LinkedIn Watcher - Windows Command Prompt Setup         ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 STEP-BY-STEP COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1️⃣ Open Windows Command Prompt (NOT PowerShell, NOT WSL)
+   - Press Win + R
+   - Type: cmd
+   - Press Enter
+
+2️⃣ Navigate to Watchers folder
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+cd D:\Ai-Employee\AI_Employee_Vault\Watchers
+
+3️⃣ Check Python installed
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+python --version
+
+If not installed:
+→ Download from: https://www.python.org/downloads/
+→ Check "Add to PATH" during installation
+→ Restart Command Prompt after installation
+
+4️⃣ Install Dependencies (One-time)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+pip install playwright python-dotenv
+
+playwright install chromium
+
+5️⃣ Setup LinkedIn Session (Login once)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+python setup_linkedin_session.py
+
+What happens:
+- Browser window will open
+- Login to LinkedIn manually
+- Complete any security challenges
+- Wait 10 seconds on LinkedIn feed
+- Browser closes automatically
+- Session saved! ✅
+
+6️⃣ Test LinkedIn Watcher
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+python test_linkedin.py --full
+
+Should show:
+✅ Already logged in to LinkedIn
+✅ Check complete!
+
+7️⃣ Run LinkedIn Watcher Continuously
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+python linkedin_watcher.py ..\
+
+Checks every 60 seconds for:
+- New messages
+- Notifications
+- Connection requests
+- Lead keywords
+
+Stop with: Ctrl+C
+
+8️⃣ Run in Background (Optional)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+start /B python linkedin_watcher.py ..\ > linkedin.log 2>&1
+
+View logs:
+type linkedin.log
+
+Stop:
+taskkill /F /IM python.exe
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 VERIFY SETUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Check session exists:
+dir .linkedin_session
+
+Check action files:
+dir ..\Needs_Action\LINKEDIN_*
+
+Check logs:
+type ..\Logs\2026-02-08.json
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ IMPORTANT NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Use Command Prompt (cmd), NOT PowerShell
+✓ Session saves in .linkedin_session folder (don't delete!)
+✓ First login is manual (browser visible)
+✓ After session saved, can run headless
+✓ Check interval: 60 seconds (LinkedIn rate limit safe)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 QUICK START (Copy-Paste All)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+cd D:\Ai-Employee\AI_Employee_Vault\Watchers
+python --version
+pip install playwright python-dotenv
+playwright install chromium
+python setup_linkedin_session.py
+python test_linkedin.py --full
+python linkedin_watcher.py ..\
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 BOTH WATCHERS RUNNING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Terminal 1 (WSL): Gmail Watcher
+cd /mnt/d/Ai-Employee/AI_Employee_Vault/Watchers
+python gmail_watcher.py ../
+
+Terminal 2 (Windows CMD): LinkedIn Watcher
+cd D:\Ai-Employee\AI_Employee_Vault\Watchers
+python linkedin_watcher.py ..\
+
+Both will create action files in: Needs_Action\
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🆘 TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"python is not recognized"
+→ Install Python from python.org
+→ Check "Add to PATH" during installation
+→ Restart Command Prompt
+
+"pip is not recognized"
+→ python -m pip install playwright python-dotenv
+
+"playwright not found"
+→ python -m playwright install chromium
+
+"LinkedIn login failed"
+→ Run setup_linkedin_session.py again
+→ Complete security challenges manually
+→ Wait on feed page for 10 seconds
+
+"Session expired"
+→ Delete .linkedin_session folder
+→ Run setup_linkedin_session.py again
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ SUCCESS CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+□ Python installed on Windows
+□ Playwright and dependencies installed
+□ LinkedIn session setup completed
+□ test_linkedin.py shows "logged in"
+□ Watcher running and checking messages
+□ Action files created in Needs_Action\
+□ Logs created in Logs\
+
+When all checked → LinkedIn watcher operational! 🎉
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
