@@ -1,0 +1,11 @@
+# Odoo MCP Server Dependencies
+
+# Environment management
+python-dotenv>=1.0.0
+
+# No additional dependencies needed - uses stdlib xmlrpc.client
+# Odoo XML-RPC is supported by Python's built-in libraries
+
+# Optional: For testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0

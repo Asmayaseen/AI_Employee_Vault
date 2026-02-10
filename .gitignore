@@ -16,9 +16,15 @@ token.json
 *_token*
 *_key.txt
 
-# WhatsApp Session Data
+# WhatsApp and LinkedIn Session Data (both dotted and non-dotted)
 whatsapp_session/
+.whatsapp_session/
 linkedin_session/
+.linkedin_session/
+**/whatsapp_session/
+**/.whatsapp_session/
+**/linkedin_session/
+**/.linkedin_session/
 
 # Logs with Potentially Sensitive Data
 *.log
@@ -103,6 +109,9 @@ AI_Employee_Vault/Done/*
 !AI_Employee_Vault/Done/.gitkeep
 AI_Employee_Vault/Logs/*.json
 !AI_Employee_Vault/Logs/.gitkeep
+
+AI_Employee_Vault/Queued_Actions/*
+!AI_Employee_Vault/Queued_Actions/.gitkeep
 
 # Keep folder structure but not contents
 !**/.gitkeep
