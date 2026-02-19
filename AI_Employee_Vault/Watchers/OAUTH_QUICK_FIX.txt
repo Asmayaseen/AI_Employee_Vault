@@ -1,0 +1,24 @@
+ERROR: Access blocked - Error 403: access_denied
+
+SOLUTION (2 minutes):
+
+1. Open: https://console.cloud.google.com/apis/credentials/consent
+
+2. Scroll to "Test users" section
+
+3. Click "+ ADD USERS"
+
+4. Enter: asmayaseen9960@gmail.com
+
+5. Click "ADD"
+
+6. Click "SAVE" (bottom of page)
+
+7. Run: python authenticate_gmail.py
+
+8. Try OAuth again - should work now!
+
+WHY: Your app is in "Testing" mode, so only test users can access it.
+You need to add yourself as a test user.
+
+DOCS: See FIX_OAUTH_ACCESS_BLOCKED.md for detailed guide with screenshots.

@@ -1,0 +1,229 @@
+{
+  "main": {
+    "id": "20572fa1d2c32cc7",
+    "type": "split",
+    "children": [
+      {
+        "id": "b4ba1286110586c6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9cfd589b5cacb4b0",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          },
+          {
+            "id": "ab4ec8de1916689f",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "10115ce3ea9d204d",
+    "type": "split",
+    "children": [
+      {
+        "id": "9f2c670e34d61ccd",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fc83484399751fde",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "2423fc9889da5431",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "f47655f87eef24b8",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "d495c5b1816fa199",
+    "type": "split",
+    "children": [
+      {
+        "id": "6bf4a6b31733f710",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a678c2acf6e0362e",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "6e90ba465df3c1c0",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "db75330a4085a278",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "04a85ee939993fb1",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "d06c30b5d697fd27",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "ab4ec8de1916689f",
+  "lastOpenFiles": [
+    "AI_Employee_Vault/Needs_Action/EMAIL_20260213_214903_Security_alert_new_or_unusual.md",
+    "AI_Employee_Vault/Needs_Action/EMAIL_20260213_214850_Security_alert_new_or_unusual.md",
+    "AI_Employee_Vault/Needs_Action/EMAIL_20260213_214657_Security_alert_new_or_unusual.md",
+    "AI_Employee_Vault/Needs_Action/EMAIL_20260213_214642_Security_alert_new_or_unusual.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_FILE_20260207_224738_test_silv.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_FILE_20260207_195528_test.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_FILE_20260207_000806_silver_te.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_FILE_20260205_181525_client_re.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_FILE_20260205_181519_client_re.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_FILE_20260205_175742_test_invo.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260213_101846_Amazon_P.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260213_101845_Amazon_P.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260213_100100_Overwhel.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260213_100059_Video_Te.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260213_100059_Overwhel.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260213_100059_On_your_.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260213_100058_On_your_.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260213_100058_Deploy_t.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260209_120823_Design_a.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260208_211720_From_0_t.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260208_211522_Aneela_N.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260208_160812_Security.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260208_125101_Security.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260208_124700_Security.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211200_EMAIL_20260208_122500_Security.md",
+    "AI_Employee_Vault/Plans/PLAN_20260213_211159_EMAIL_20260208_083359_Weve_upg.md",
+    "AI_Employee_Vault/Watchers/templates/dashboard.html",
+    "AI_Employee_Vault/Watchers/templates",
+    "AI_Employee_Vault/Watchers/dashboard.py",
+    "AI_Employee_Vault/Watchers/dashboard.py.tmp.5756.1770538587193",
+    "AI_Employee_Vault/Logs/2026-02-08_orchestrator.json",
+    "AI_Employee_Vault/Watchers/OAUTH_QUICK_FIX.txt",
+    "AI_Employee_Vault/Watchers/authenticate_gmail.py",
+    "AI_Employee_Vault/Watchers/authenticate_gmail.py.tmp.1404.1770487255631",
+    "AI_Employee_Vault/GMAIL_WORKING_STATUS.md.tmp.1404.1770487108301",
+    "AI_Employee_Vault/Watchers/gmail_auth_simple.sh"
+  ]
+}

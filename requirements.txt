@@ -1,0 +1,27 @@
+# AI Employee - Railway Cloud Deployment
+# Core
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+
+# File system watching
+watchdog>=3.0.0
+
+# Gmail API
+google-api-python-client>=2.100.0
+google-auth-httplib2>=0.1.0
+google-auth-oauthlib>=1.1.0
+
+# HTTP requests
+requests>=2.31.0
+aiohttp>=3.9.0
+
+# Scheduling
+schedule>=1.2.0
+apscheduler>=3.10.0
+
+# Process management
+psutil>=5.9.0
+
+# Dashboard
+flask>=3.0.0
+flask-cors>=4.0.0

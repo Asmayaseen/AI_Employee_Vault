@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Employee Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .watcher-item {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .watcher-item:hover {
+            transform: translateX(5px);
+        }
+
+        .watcher-info {
+            flex: 1;
+        }
+
+        .watcher-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .watcher-status {
+            font-size: 0.9em;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .status-running {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-stopped {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-left: 10px;
+        }
+
+        .btn-start {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #218838;
+        }
+
+        .btn-stop {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-stop:hover {
+            background: #c82333;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .action-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+
+        .action-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .action-meta {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .priority-high {
+            border-left-color: #dc3545;
+        }
+
+        .priority-medium {
+            border-left-color: #ffc107;
+        }
+
+        .priority-low {
+            border-left-color: #28a745;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .log-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            background: #f8f9fa;
+            font-size: 0.9em;
+            font-family: 'Courier New', monospace;
+        }
+
+        .log-timestamp {
+            color: #666;
+            margin-right: 10px;
+        }
+
+        .log-watcher {
+            color: #667eea;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .refresh-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            margin: 20px;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Employee Dashboard</h1>
+            <p>Monitor and control your autonomous AI employee</p>
+        </div>
+
+        <div class="refresh-indicator" id="refreshIndicator">
+            <div class="spinner"></div>
+            <span>Auto-refreshing...</span>
+        </div>
+
+        <!-- Statistics -->
+        <div class="card">
+            <h2>📊 Statistics</h2>
+            <div class="stat-grid" id="statsGrid">
+                <div class="stat-box">
+                    <div class="stat-value" id="statActions">0</div>
+                    <div class="stat-label">Pending Actions</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="statEmails">0</div>
+                    <div class="stat-label">Emails Processed</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="statLinkedIn">0</div>
+                    <div class="stat-label">LinkedIn Messages</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="statLogs">0</div>
+                    <div class="stat-label">Logs Today</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Watchers -->
+            <div class="card">
+                <h2>🔔 Watchers</h2>
+                <div id="watchersList"></div>
+            </div>
+
+            <!-- Pending Actions -->
+            <div class="card">
+                <h2>📬 Pending Actions</h2>
+                <div id="actionsList"></div>
+            </div>
+        </div>
+
+        <!-- Recent Logs -->
+        <div class="card">
+            <h2>📝 Recent Activity</h2>
+            <div id="logsList"></div>
+        </div>
+    </div>
+
+    <!-- Modal for action details -->
+    <div id="actionModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <div id="actionModalContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let lastUpdate = null;
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                lastUpdate = new Date();
+                updateDashboard(data);
+            } catch (error) {
+                console.error('Error fetching status:', error);
+            }
+        }
+
+        async function fetchLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                const data = await response.json();
+                updateLogs(data.logs);
+            } catch (error) {
+                console.error('Error fetching logs:', error);
+            }
+        }
+
+        function updateDashboard(data) {
+            // Update statistics
+            document.getElementById('statActions').textContent = data.statistics.total_actions;
+            document.getElementById('statEmails').textContent = data.statistics.processed_emails;
+            document.getElementById('statLinkedIn').textContent = data.statistics.processed_linkedin;
+            document.getElementById('statLogs').textContent = data.statistics.logs_today;
+
+            // Update watchers
+            const watchersList = document.getElementById('watchersList');
+            watchersList.innerHTML = '';
+
+            for (const [id, watcher] of Object.entries(data.watchers)) {
+                const item = document.createElement('div');
+                item.className = 'watcher-item';
+
+                const isRunning = watcher.status === 'running';
+                const statusClass = isRunning ? 'status-running' : 'status-stopped';
+                const statusText = isRunning ? '✅ Running' : '⏸️ Stopped';
+
+                item.innerHTML = `
+                    <div class="watcher-info">
+                        <div class="watcher-name">${watcher.name}</div>
+                        <span class="watcher-status ${statusClass}">${statusText}</span>
+                    </div>
+                    <div>
+                        ${isRunning ?
+                            `<button class="btn btn-stop" onclick="stopWatcher('${id}')">Stop</button>` :
+                            `<button class="btn btn-start" onclick="startWatcher('${id}')">Start</button>`
+                        }
+                    </div>
+                `;
+                watchersList.appendChild(item);
+            }
+
+            // Update actions
+            const actionsList = document.getElementById('actionsList');
+            actionsList.innerHTML = '';
+
+            if (data.pending_actions.length === 0) {
+                actionsList.innerHTML = '<div class="empty-state">No pending actions</div>';
+            } else {
+                data.pending_actions.slice(0, 10).forEach(action => {
+                    const item = document.createElement('div');
+                    item.className = `action-item priority-${action.priority}`;
+                    item.onclick = () => viewAction(action.filename);
+
+                    item.innerHTML = `
+                        <div class="action-title">${action.title}</div>
+                        <div class="action-meta">
+                            ${action.source} • ${action.priority} priority • ${new Date(action.created).toLocaleString()}
+                        </div>
+                    `;
+                    actionsList.appendChild(item);
+                });
+            }
+        }
+
+        function updateLogs(logs) {
+            const logsList = document.getElementById('logsList');
+            logsList.innerHTML = '';
+
+            if (logs.length === 0) {
+                logsList.innerHTML = '<div class="empty-state">No recent activity</div>';
+            } else {
+                logs.slice(-20).reverse().forEach(log => {
+                    const item = document.createElement('div');
+                    item.className = 'log-item';
+
+                    const timestamp = new Date(log.timestamp).toLocaleTimeString();
+                    item.innerHTML = `
+                        <span class="log-timestamp">${timestamp}</span>
+                        <span class="log-watcher">${log.watcher || 'System'}</span>
+                        <span>${log.action || log.message || JSON.stringify(log)}</span>
+                    `;
+                    logsList.appendChild(item);
+                });
+            }
+        }
+
+        async function startWatcher(watcherId) {
+            try {
+                const response = await fetch(`/api/watcher/${watcherId}/start`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`${watcherId} watcher started!`);
+                    fetchStatus();
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`Error starting watcher: ${error}`);
+            }
+        }
+
+        async function stopWatcher(watcherId) {
+            try {
+                const response = await fetch(`/api/watcher/${watcherId}/stop`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`${watcherId} watcher stopped!`);
+                    fetchStatus();
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`Error stopping watcher: ${error}`);
+            }
+        }
+
+        async function viewAction(filename) {
+            try {
+                const response = await fetch(`/api/actions/${filename}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('actionModalContent').innerHTML = `
+                        <h2>${filename}</h2>
+                        <p><strong>Modified:</strong> ${new Date(data.modified).toLocaleString()}</p>
+                        <pre>${data.content}</pre>
+                    `;
+                    document.getElementById('actionModal').style.display = 'flex';
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`Error loading action: ${error}`);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('actionModal').style.display = 'none';
+        }
+
+        // Auto-refresh every 5 seconds
+        setInterval(() => {
+            fetchStatus();
+            fetchLogs();
+        }, 5000);
+
+        // Initial load
+        fetchStatus();
+        fetchLogs();
+    </script>
+</body>
+</html>
