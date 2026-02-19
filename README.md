@@ -1,3 +1,12 @@
+---
+title: AI Employee
+emoji: 🤖
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+---
+
 # Personal AI Employee - Platinum Tier Implementation
 
 **Hackathon 0: Building Autonomous FTEs in 2026**
