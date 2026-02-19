@@ -1,0 +1,25 @@
+[Unit]
+Description=AI Employee Dashboard (Next.js)
+After=network.target
+Wants=ai-employee-api.service
+
+[Service]
+Type=simple
+User=ai-employee
+Group=ai-employee
+WorkingDirectory=/opt/ai-employee/AI_Employee_Vault/web-ui
+EnvironmentFile=/etc/ai-employee/env
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ai-employee-dashboard
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/ai-employee
+
+[Install]
+WantedBy=multi-user.target

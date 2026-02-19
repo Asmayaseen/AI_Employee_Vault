@@ -85,6 +85,7 @@ class BriefingData:
     goals: BusinessGoals = field(default_factory=BusinessGoals)
     suggestions: List[str] = field(default_factory=list)
     accounting: AccountingData = field(default_factory=AccountingData)
+    social_summary: Optional[Dict] = None
 
 
 class CEOBriefingGenerator:
@@ -150,7 +151,7 @@ class CEOBriefingGenerator:
             return 'file_processing'
         elif 'plan' in filename_lower:
             return 'planning'
-        elif 'linkedin' in filename_lower:
+        elif any(p in filename_lower for p in ['linkedin', 'facebook', 'instagram', 'twitter']):
             return 'social_media'
         elif 'whatsapp' in filename_lower:
             return 'messaging'
@@ -411,51 +412,178 @@ Flag for review if:
 
         return suggestions
 
-    def collect_accounting_data(self) -> AccountingData:
-        """Pull financial data from Odoo MCP for accounting audit."""
+    def collect_accounting_data(self, period_days: int = 7) -> AccountingData:
+        """Pull financial data from Odoo via JSON-RPC for accounting audit.
+
+        Fetches last N days of revenue, pending invoices, outstanding
+        receivables, expense summary, and cashflow snapshot from Odoo.
+        """
         acct = AccountingData()
 
         try:
-            from tools.accounting_tools import get_financial_summary, get_subscription_audit
+            from odoo_client import OdooJSONRPCClient
 
-            # Get financial summary for this month
-            summary_result = asyncio.get_event_loop().run_until_complete(
-                get_financial_summary({'period': 'this_month'})
+            client = OdooJSONRPCClient()
+            conn = client.connect()
+            if not conn.success:
+                acct.error = f"Odoo authentication failed: {conn.error}"
+                return acct
+
+            end_date = datetime.now().strftime('%Y-%m-%d')
+            start_date = (datetime.now() - timedelta(days=period_days)).strftime('%Y-%m-%d')
+
+            # --- Revenue: posted customer invoices in period ---
+            inv_result = client.search_read(
+                'account.move',
+                [
+                    ('move_type', '=', 'out_invoice'),
+                    ('invoice_date', '>=', start_date),
+                    ('invoice_date', '<=', end_date),
+                    ('state', '=', 'posted')
+                ],
+                fields=['amount_total', 'amount_residual', 'payment_state',
+                        'partner_id', 'invoice_date']
             )
 
-            if summary_result.get('success'):
-                revenue = summary_result.get('revenue', {})
-                expenses = summary_result.get('expenses', {})
-                profit = summary_result.get('profit', {})
-                receivables = summary_result.get('receivables', {})
+            if inv_result.success and inv_result.data:
+                customer_totals = defaultdict(float)
+                for inv in inv_result.data:
+                    amt = inv.get('amount_total', 0)
+                    residual = inv.get('amount_residual', 0)
+                    acct.revenue_total += amt
+                    acct.revenue_collected += (amt - residual)
+                    acct.outstanding_receivables += residual
+                    acct.invoice_count += 1
+                    partner = inv.get('partner_id')
+                    if isinstance(partner, (list, tuple)) and len(partner) >= 2:
+                        customer_totals[partner[1]] += amt
 
-                acct.revenue_total = revenue.get('total', 0)
-                acct.revenue_collected = revenue.get('collected', 0)
-                acct.invoice_count = revenue.get('invoice_count', 0)
-                acct.expenses_total = expenses.get('total', 0)
-                acct.net_profit = profit.get('net', 0)
-                acct.profit_margin = profit.get('margin', 0)
-                acct.outstanding_receivables = receivables.get('total_outstanding', 0)
-                acct.overdue_receivables = receivables.get('overdue', 0)
-                acct.top_customers = summary_result.get('top_customers', [])
-                acct.top_expenses = summary_result.get('top_expenses', [])
-                acct.available = True
+                acct.top_customers = [
+                    {'name': name, 'revenue': rev}
+                    for name, rev in sorted(customer_totals.items(),
+                                            key=lambda x: x[1], reverse=True)[:5]
+                ]
 
-            # Get subscription audit
-            audit_result = asyncio.get_event_loop().run_until_complete(
-                get_subscription_audit({'months_back': 3})
+            # --- Overdue receivables ---
+            overdue_result = client.search_read(
+                'account.move',
+                [
+                    ('move_type', '=', 'out_invoice'),
+                    ('state', '=', 'posted'),
+                    ('payment_state', '!=', 'paid'),
+                    ('invoice_date_due', '<', end_date)
+                ],
+                fields=['amount_residual']
+            )
+            if overdue_result.success and overdue_result.data:
+                acct.overdue_receivables = sum(
+                    r.get('amount_residual', 0) for r in overdue_result.data
+                )
+
+            # --- Expenses: vendor bills in period ---
+            bill_result = client.search_read(
+                'account.move',
+                [
+                    ('move_type', '=', 'in_invoice'),
+                    ('invoice_date', '>=', start_date),
+                    ('invoice_date', '<=', end_date),
+                    ('state', '=', 'posted')
+                ],
+                fields=['amount_total', 'partner_id']
             )
 
-            if audit_result.get('success'):
-                acct.subscriptions = audit_result.get('subscriptions', [])
-                acct.subscription_flags = audit_result.get('flags', [])
+            if bill_result.success and bill_result.data:
+                vendor_totals = defaultdict(float)
+                for bill in bill_result.data:
+                    amt = bill.get('amount_total', 0)
+                    acct.expenses_total += amt
+                    partner = bill.get('partner_id')
+                    if isinstance(partner, (list, tuple)) and len(partner) >= 2:
+                        vendor_totals[partner[1]] += amt
+
+                acct.top_expenses = [
+                    {'vendor': name, 'amount': amt}
+                    for name, amt in sorted(vendor_totals.items(),
+                                            key=lambda x: x[1], reverse=True)[:5]
+                ]
+
+            # --- Profit & margin ---
+            acct.net_profit = acct.revenue_total - acct.expenses_total
+            if acct.revenue_total > 0:
+                acct.profit_margin = (acct.net_profit / acct.revenue_total) * 100
+
+            # --- Subscription detection: recurring vendor bills (3+ in 90 days) ---
+            sub_start = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
+            sub_result = client.search_read(
+                'account.move',
+                [
+                    ('move_type', '=', 'in_invoice'),
+                    ('invoice_date', '>=', sub_start),
+                    ('state', '=', 'posted')
+                ],
+                fields=['amount_total', 'partner_id']
+            )
+
+            if sub_result.success and sub_result.data:
+                vendor_history = defaultdict(lambda: {'total': 0.0, 'count': 0})
+                for bill in sub_result.data:
+                    partner = bill.get('partner_id')
+                    if isinstance(partner, (list, tuple)) and len(partner) >= 2:
+                        name = partner[1]
+                        vendor_history[name]['total'] += bill.get('amount_total', 0)
+                        vendor_history[name]['count'] += 1
+
+                for name, data in vendor_history.items():
+                    if data['count'] >= 3:
+                        avg = data['total'] / data['count']
+                        acct.subscriptions.append({
+                            'vendor': name,
+                            'avg_monthly_cost': avg,
+                            'occurrences': data['count']
+                        })
+                        if avg > 200:
+                            acct.subscription_flags.append({
+                                'message': f"{name}: ${avg:,.0f}/mo avg across {data['count']} bills"
+                            })
+
+            acct.available = True
 
         except ImportError:
-            acct.error = "Odoo MCP not available - install and configure to enable accounting audit"
+            acct.error = "Odoo client not available - install odoo-mcp to enable financial data"
+        except ConnectionError as e:
+            acct.error = f"Cannot reach Odoo server: {e}"
         except Exception as e:
-            acct.error = f"Odoo connection error: {str(e)}"
+            acct.error = f"Odoo data collection error: {str(e)}"
 
         return acct
+
+    def collect_social_media_summary(self, period_days: int = 7) -> Optional[Dict]:
+        """Collect cross-platform social media summary via social-mcp."""
+        try:
+            from tools import generate_all_summaries
+            import asyncio
+            result = asyncio.run(generate_all_summaries({'days': period_days}))
+            return result
+        except ImportError:
+            # Count social media actions from Done folder as fallback
+            social_counts = {'facebook': 0, 'instagram': 0, 'twitter': 0, 'linkedin': 0}
+            cutoff = datetime.now() - timedelta(days=period_days)
+            if self.done_folder.exists():
+                for f in self.done_folder.glob('*.md'):
+                    try:
+                        if datetime.fromtimestamp(f.stat().st_mtime) < cutoff:
+                            continue
+                        name = f.name.lower()
+                        for plat in social_counts:
+                            if plat in name:
+                                social_counts[plat] += 1
+                    except Exception:
+                        pass
+            if any(social_counts.values()):
+                return {'fallback': True, 'counts': social_counts}
+            return None
+        except Exception:
+            return None
 
     def generate_briefing(self, period_days: int = 7, preview: bool = False) -> str:
         """Generate the CEO briefing report."""
@@ -469,7 +597,8 @@ Flag for review if:
         data.pending_tasks, data.approval_waiting = self.collect_pending_items()
         data.goals = self.load_business_goals()
         data.bottlenecks = self.identify_bottlenecks(data.completed_tasks)
-        data.accounting = self.collect_accounting_data()
+        data.accounting = self.collect_accounting_data(period_days)
+        data.social_summary = self.collect_social_media_summary(period_days)
         data.suggestions = self.generate_suggestions(data)
 
         # Generate report content
@@ -602,6 +731,30 @@ Flag for review if:
         elif data.accounting.error:
             accounting_section = f"\n## Financial Summary\n*{data.accounting.error}*\n"
 
+        # Social media summary section
+        social_section = ""
+        if data.social_summary:
+            if data.social_summary.get('fallback'):
+                counts = data.social_summary.get('counts', {})
+                total = sum(counts.values())
+                if total > 0:
+                    social_section = f"""
+## Social Media Activity
+| Platform | Posts/Actions |
+|----------|--------------|
+| LinkedIn | {counts.get('linkedin', 0)} |
+| Facebook | {counts.get('facebook', 0)} |
+| Instagram | {counts.get('instagram', 0)} |
+| Twitter/X | {counts.get('twitter', 0)} |
+| **Total** | **{total}** |
+"""
+            else:
+                social_section = "\n## Social Media Summary\n"
+                if isinstance(data.social_summary, dict):
+                    for key, value in data.social_summary.items():
+                        if key not in ('status', 'error'):
+                            social_section += f"- **{key.replace('_', ' ').title()}**: {value}\n"
+
         # Compose full report
         report = f'''---
 generated: {now.isoformat()}
@@ -621,7 +774,7 @@ period: {data.period_start.strftime('%Y-%m-%d')} to {data.period_end.strftime('%
 | Pending Items | {len(data.pending_tasks)} |
 | Awaiting Approval | {len(data.approval_waiting)} |
 | Bottlenecks | {len(data.bottlenecks)} |
-{revenue_section}{accounting_section}{completed_section}{pending_section}{approval_section}{bottleneck_section}{suggestions_section}{deadlines_section}
+{revenue_section}{accounting_section}{social_section}{completed_section}{pending_section}{approval_section}{bottleneck_section}{suggestions_section}{deadlines_section}
 ---
 *Generated by AI Employee v2.0 (Gold Tier) on {now.strftime('%Y-%m-%d %H:%M:%S')}*
 '''

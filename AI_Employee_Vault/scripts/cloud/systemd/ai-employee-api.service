@@ -1,0 +1,24 @@
+[Unit]
+Description=AI Employee API (Flask)
+After=network.target
+
+[Service]
+Type=simple
+User=ai-employee
+Group=ai-employee
+WorkingDirectory=/opt/ai-employee/AI_Employee_Vault
+EnvironmentFile=/etc/ai-employee/env
+ExecStart=/opt/ai-employee/venv/bin/python Watchers/dashboard.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ai-employee-api
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/ai-employee
+
+[Install]
+WantedBy=multi-user.target

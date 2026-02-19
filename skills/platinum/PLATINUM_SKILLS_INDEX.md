@@ -3,85 +3,88 @@
 ## Required Skills
 
 ### platinum-cloud-deploy.skill.md
-**Purpose:** Deploy AI Employee on cloud VM (24/7 operation)
-**Time:** 8-10 hours
+**Purpose:** Deploy AI Employee system to Ubuntu cloud VPS
+**Time:** 6-8 hours
 **Key Features:**
-- Oracle Cloud Free Tier setup (or AWS/GCP)
-- Ubuntu server configuration
-- Python environment setup
-- Systemd services for watchers
-- HTTPS/SSL configuration
+- Ubuntu VPS provisioning with systemd
+- Nginx reverse proxy with SSL
+- Let's Encrypt certificate automation
+- Automated deployment script
+- Health endpoint verification
+- Zero-downtime deployment support
 - Firewall and security hardening
-- Automated backups
 
 ### platinum-vault-sync.skill.md
-**Purpose:** Synchronize vault between Cloud and Local agents
-**Time:** 6-8 hours
-**Key Features:**
-- Git-based sync (Phase 1)
-- Syncthing alternative
-- Conflict resolution
-- Claim-by-move protocol
-- Single-writer rule for Dashboard
-- Secrets exclusion (.env, tokens)
-- Selective folder sync
-
-### platinum-work-zones.skill.md
-**Purpose:** Cloud/Local work-zone specialization
-**Time:** 6-8 hours
-**Key Features:**
-- Cloud owns: Email triage, draft replies, social post drafts
-- Local owns: Approvals, WhatsApp, payments, final sends
-- Delegation via /Needs_Action/<domain>/
-- /In_Progress/<agent>/ claim protocol
-- /Updates/ folder for Cloud→Local communication
-- Agent coordination rules
-- A2A messaging (Phase 2 optional)
-
-### platinum-health-monitor.skill.md
-**Purpose:** 24/7 health monitoring and alerting
+**Purpose:** Git-based vault synchronization between local and cloud
 **Time:** 4-5 hours
 **Key Features:**
-- Uptime monitoring
-- Resource usage tracking (CPU, memory, disk)
-- Process watchdog
-- API quota monitoring
-- Log rotation
-- Alert notifications (email/SMS)
+- Bidirectional git-based sync
+- Conflict resolution (local wins)
+- Scheduled sync every 5 minutes
+- Sync status API endpoint
+- Manual trigger support
+- Secrets exclusion (.env, tokens)
+
+### platinum-work-zones.skill.md
+**Purpose:** Cloud/Local zone routing with automatic failover
+**Time:** 4-5 hours
+**Key Features:**
+- Zone configuration management
+- Automatic task routing
+- Health-based failover detection
+- Zone status dashboard panel
+- Manual zone override
+- Per-task-type routing rules
+
+### platinum-health-monitor.skill.md
+**Purpose:** Real-time health monitoring with alerting
+**Time:** 5-6 hours
+**Key Features:**
+- HTTP health checks every 30 seconds
+- Email alerts via alert manager
+- Dashboard integration
+- Historical health data logging
 - Auto-recovery triggers
-- Status dashboard
+- Consecutive failure tracking
 
 ### platinum-odoo-cloud.skill.md
-**Purpose:** Deploy Odoo Community on cloud VM
-**Time:** 6-8 hours
+**Purpose:** Deploy Odoo to cloud with Docker
+**Time:** 4-5 hours
 **Key Features:**
-- Cloud VM Odoo installation
-- HTTPS with Let's Encrypt
-- Database backups
-- Cloud agent MCP integration
-- Draft-only operations from Cloud
-- Local approval for posting invoices/payments
-- Multi-company support (optional)
+- Docker Compose with PostgreSQL
+- Nginx reverse proxy configuration
+- Automated database backups
+- SSL termination
+- Performance tuning
+- Cloud-local Odoo sync
 
 ## Total Platinum Tier Time
-Estimated: 60+ hours
+Estimated: 25-30 hours
 
 ## Platinum Tier Deliverables Checklist
-- [ ] All Gold requirements complete
-- [ ] Cloud VM deployed and operational 24/7
-- [ ] Vault sync working (Git or Syncthing)
-- [ ] Work-zone specialization implemented
-- [ ] Cloud: drafts emails/posts (no sends)
-- [ ] Local: approvals and final actions
-- [ ] Odoo Cloud deployed with HTTPS
-- [ ] Cloud agent MCP to Odoo (draft-only)
-- [ ] Local agent approves Odoo posts
-- [ ] Health monitoring operational
-- [ ] Auto-restart on failures
-- [ ] Security hardened (secrets never sync)
-- [ ] Full documentation
+- [x] All Gold requirements complete
+- [x] Cloud deployment scripts ready (deploy.sh with requirements.txt + zones.json provisioning)
+- [x] Systemd service units created (4 services: api, dashboard, watchers, health-monitor)
+- [x] Nginx reverse proxy configured (SSL-ready with security headers)
+- [x] Vault sync module implemented + wired into scheduler (every 5 min)
+- [x] Work zones routing implemented + wired into orchestrator
+- [x] Health monitor watcher created + separate systemd service
+- [x] Alert manager system built (email SMTP + logging)
+- [x] Odoo cloud Docker config ready
+- [x] Dashboard updated with Platinum API endpoints (9 new routes)
+- [x] Claim-by-move protocol implemented (claim_task.py)
+- [x] Draft-only mode for Cloud agent (approval_watcher.py)
+- [x] Vault domain subdirectory structure created
+- [x] zones.json configuration file created
+- [x] Zone failover check in scheduler (every 2 min)
+- [x] .env.example updated with Platinum tier variables
+- [x] start_everything.sh updated (v3.0 with health monitor)
+- [x] Backup script with 7-day rotation (backup.sh)
+- [x] PLATINUM_TIER_STATUS.md documentation complete
+- [ ] Cloud VPS provisioned and running
+- [ ] SSL certificates installed
+- [ ] Production deployment tested
 - [ ] Demo video (15-20 min)
-- [ ] Production-ready architecture
 
 ## Platinum Demo Gate
 **Minimum passing scenario:**

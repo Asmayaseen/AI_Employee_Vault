@@ -1,0 +1,26 @@
+[Unit]
+Description=AI Employee Watchers (Orchestrator)
+After=network.target ai-employee-api.service
+
+[Service]
+Type=simple
+User=ai-employee
+Group=ai-employee
+WorkingDirectory=/opt/ai-employee/AI_Employee_Vault/Watchers
+EnvironmentFile=/etc/ai-employee/env
+Environment=AGENT_MODE=draft_only
+Environment=AGENT_NAME=cloud
+ExecStart=/opt/ai-employee/venv/bin/python orchestrator.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ai-employee-watchers
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/ai-employee
+
+[Install]
+WantedBy=multi-user.target

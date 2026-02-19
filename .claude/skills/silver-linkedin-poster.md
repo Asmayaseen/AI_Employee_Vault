@@ -356,11 +356,51 @@ Which one will you implement first?
 #BusinessTips #Growth #Strategy'''
         }
 
-        # For now, return template
-        # TODO: Integrate with Claude to fill in variables
         template = templates.get(topic, templates['insight'])
 
-        return self.create_draft_post(template)
+        # Fill template variables from Business_Goals.md context
+        goals_content = goals_file.read_text(encoding='utf-8')
+        filled = self._fill_template_from_context(template, goals_content, topic)
+
+        return self.create_draft_post(filled)
+
+    def _fill_template_from_context(self, template: str, context: str, topic: str):
+        """Fill template placeholders using business context."""
+        import re
+        # Extract meaningful lines from context
+        lines = [l.strip() for l in context.split('\n')
+                 if l.strip() and not l.startswith('#') and len(l.strip()) > 10]
+        highlights = lines[:5] if lines else ['Delivering value to clients']
+
+        # Build substitution map with sensible defaults
+        subs = {
+            'achievement': highlights[0] if highlights else 'making great progress',
+            'value_proposition': 'delivering quality and innovation',
+            'highlight_1': highlights[0] if len(highlights) > 0 else 'Quality delivery',
+            'highlight_2': highlights[1] if len(highlights) > 1 else 'Client satisfaction',
+            'highlight_3': highlights[2] if len(highlights) > 2 else 'Continuous improvement',
+            'company_name': 'our team',
+            'service_description': highlights[0] if highlights else 'professional services',
+            'differentiator_1': 'Client-focused approach',
+            'differentiator_2': 'Technical excellence',
+            'differentiator_3': 'Reliable delivery',
+            'industry': 'business',
+            'insight_statement': highlights[0] if highlights else 'Adapt and grow',
+            'trend_1': highlights[0] if len(highlights) > 0 else 'Automation is key',
+            'trend_2': highlights[1] if len(highlights) > 1 else 'Quality over quantity',
+            'trend_3': highlights[2] if len(highlights) > 2 else 'Continuous learning',
+            'topic_introduction': f'Quick tips on {topic}',
+            'tip_1': 'Start with clear goals',
+            'tip_2': 'Measure what matters',
+            'tip_3': 'Iterate and improve',
+        }
+
+        # Fill placeholders
+        result = template
+        for key, value in subs.items():
+            result = result.replace('{' + key + '}', value)
+
+        return result
 
 
 def main():
@@ -374,7 +414,7 @@ def main():
         sys.exit(1)
 
     vault_path = '/mnt/d/Ai-Employee/AI_Employee_Vault'
-    session_path = '/mnt/d/Ai-Employee/AI_Employee_Vault/Watchers/linkedin_session'
+    session_path = '/mnt/d/Ai-Employee/AI_Employee_Vault/Watchers/.linkedin_session'
 
     poster = LinkedInPoster(vault_path, session_path)
 

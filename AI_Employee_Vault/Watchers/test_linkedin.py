@@ -88,7 +88,7 @@ def main():
     print("   python test_linkedin.py")
     print()
     print("C. Run watcher continuously:")
-    print("   python linkedin_watcher.py ../")
+    print("   python linkedin_watcher.py --vault /mnt/d/Ai-Employee/AI_Employee_Vault")
     print()
 
     # If --full flag provided

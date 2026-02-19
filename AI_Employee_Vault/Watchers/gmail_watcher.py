@@ -61,6 +61,18 @@ class GmailWatcher(BaseWatcher):
             'reply needed', 'follow up', 'reminder'
         ]
 
+        # Platinum: draft-only mode (Cloud agent)
+        self.draft_only = os.getenv('AGENT_MODE', '').lower() == 'draft_only'
+        self.agent_name = os.getenv('AGENT_NAME', 'local')
+
+        # Domain subdirectory structure (Platinum)
+        self.needs_action_email = self.needs_action / 'email'
+        self.pending_approval_email = self.vault_path / 'Pending_Approval' / 'email'
+        self.needs_action_email.mkdir(parents=True, exist_ok=True)
+        self.pending_approval_email.mkdir(parents=True, exist_ok=True)
+
+        self.logger.info(f"Mode: {'DRAFT-ONLY (Cloud)' if self.draft_only else 'FULL (Local)'}")
+
         # Initialize Gmail service
         self.service = None
         self._authenticate()
@@ -174,7 +186,13 @@ class GmailWatcher(BaseWatcher):
             return []
 
     def create_action_file(self, message) -> Path:
-        """Create action file for an email."""
+        """Create action file for an email.
+
+        Platinum behavior:
+        - FULL mode (Local): writes to /Needs_Action/email/ for Claude to process
+        - DRAFT-ONLY mode (Cloud): writes draft approval request to /Pending_Approval/email/
+          so Local agent can review and execute the send
+        """
         try:
             # Get full message details
             msg = self.service.users().messages().get(
@@ -191,6 +209,7 @@ class GmailWatcher(BaseWatcher):
             sender = headers.get('from', 'Unknown')
             subject = headers.get('subject', 'No Subject')
             date_str = headers.get('date', '')
+            reply_to = headers.get('reply-to', sender)
 
             # Parse date
             try:
@@ -205,10 +224,28 @@ class GmailWatcher(BaseWatcher):
             # Determine priority
             priority = self._determine_priority(subject, snippet, msg.get('labelIds', []))
 
-            # Create action file content
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            safe_subject = "".join(c for c in subject[:30] if c.isalnum() or c in ' -_').strip()
+            safe_subject = safe_subject.replace(' ', '_')
 
-            content = f'''---
+            if self.draft_only:
+                # Platinum Cloud mode: generate draft reply for human approval
+                filepath = self._create_draft_approval(
+                    message_id=message['id'],
+                    sender=sender,
+                    reply_to=reply_to,
+                    subject=subject,
+                    date_formatted=date_formatted,
+                    snippet=snippet,
+                    priority=priority,
+                    labels=msg.get('labelIds', []),
+                    timestamp=timestamp,
+                    safe_subject=safe_subject
+                )
+                action_type = "email_draft_created"
+            else:
+                # Full mode (Local): standard action file for Claude to process
+                content = f'''---
 type: email
 source: gmail
 message_id: {message['id']}
@@ -251,25 +288,23 @@ labels: {', '.join(msg.get('labelIds', []))}
 ---
 *Created by GmailWatcher*
 '''
-
-            # Save action file
-            safe_subject = "".join(c for c in subject[:30] if c.isalnum() or c in ' -_').strip()
-            safe_subject = safe_subject.replace(' ', '_')
-            filename = f"EMAIL_{timestamp}_{safe_subject}.md"
-            filepath = self.needs_action / filename
-            filepath.write_text(content)
+                filename = f"EMAIL_{timestamp}_{safe_subject}.md"
+                filepath = self.needs_action_email / filename
+                filepath.write_text(content)
+                action_type = "email_received"
 
             # Mark as processed
             self.processed_ids.add(message['id'])
             self._save_processed_ids()
 
             # Log action
-            self.log_action("email_received", {
+            self.log_action(action_type, {
                 "message_id": message['id'],
                 "from": sender,
                 "subject": subject,
                 "priority": priority,
-                "action_file": str(filepath)
+                "action_file": str(filepath),
+                "agent_mode": "draft_only" if self.draft_only else "full"
             })
 
             return filepath
@@ -277,6 +312,77 @@ labels: {', '.join(msg.get('labelIds', []))}
         except HttpError as error:
             self.logger.error(f"Error fetching email {message['id']}: {error}")
             raise
+
+    def _create_draft_approval(
+        self, message_id: str, sender: str, reply_to: str,
+        subject: str, date_formatted: str, snippet: str,
+        priority: str, labels: list, timestamp: str, safe_subject: str
+    ) -> Path:
+        """Platinum Cloud: create draft reply in /Pending_Approval/email/ for Local approval."""
+        reply_subject = subject if subject.lower().startswith('re:') else f"Re: {subject}"
+
+        content = f'''---
+type: approval_request
+action: email_send
+agent: {self.agent_name}
+created_by: cloud_draft
+message_id: {message_id}
+to: {reply_to}
+subject: {reply_subject}
+original_from: {sender}
+original_subject: {subject}
+original_received: {date_formatted}
+priority: {priority}
+status: pending_approval
+created: {datetime.now().isoformat()}
+expires: {(datetime.now()).strftime('%Y-%m-%dT%H:%M:%S')}
+---
+
+# Draft Reply: {reply_subject}
+
+## Original Email
+**From:** {sender}
+**Date:** {date_formatted}
+**Subject:** {subject}
+
+**Preview:**
+{snippet}
+
+---
+
+## Draft Reply
+> ✏️ Edit the reply below before approving
+
+**To:** {reply_to}
+**Subject:** {reply_subject}
+
+---
+
+Thank you for your email regarding "{subject}".
+
+[Your response here - please edit before approving]
+
+Best regards
+
+---
+
+## Approval Instructions
+- **To Approve:** Move this file to `/Approved/` folder
+- **To Reject:** Move this file to `/Rejected/` folder
+- **To Edit:** Modify the draft reply above, then move to `/Approved/`
+
+## Labels
+{', '.join(labels)}
+
+---
+*Draft created by Cloud Agent (draft-only mode) — requires Local approval before sending*
+*Created: {datetime.now().isoformat()}*
+'''
+        filename = f"EMAIL_{timestamp}_{safe_subject}.md"
+        filepath = self.pending_approval_email / filename
+        filepath.write_text(content)
+        self.logger.info(f"[DRAFT-ONLY] Created draft approval: {filepath.name}")
+        return filepath
 
     def _determine_priority(self, subject: str, body: str, labels: list) -> str:
         """Determine email priority based on content and labels."""

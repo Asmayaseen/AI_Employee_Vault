@@ -99,6 +99,24 @@ class AIEmployeeScheduler:
             description='Check scheduled LinkedIn posts',
             cron_expression='0 */4 * * *',
             command='python scheduler.py --task linkedin_post_check'
+        ),
+        'social_post': ScheduledTask(
+            name='Social Media Post Check',
+            description='Check and generate scheduled Facebook/Instagram/Twitter posts',
+            cron_expression='0 */2 * * *',
+            command='python scheduler.py --task social_post_check'
+        ),
+        'vault_sync': ScheduledTask(
+            name='Vault Sync',
+            description='Sync vault between local and cloud every 5 minutes',
+            cron_expression='*/5 * * * *',
+            command='python scheduler.py --task vault_sync'
+        ),
+        'zone_failover_check': ScheduledTask(
+            name='Zone Failover Check',
+            description='Check zone health and failover if needed every 2 minutes',
+            cron_expression='*/2 * * * *',
+            command='python scheduler.py --task zone_failover_check'
         )
     }
 
@@ -319,44 +337,112 @@ period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}
         print(f"[{datetime.now()}] Running: LinkedIn Post Check")
 
         try:
+            # 1. Check for approved posts and publish them
+            from linkedin_poster import LinkedInPoster
+            poster = LinkedInPoster(vault_path=str(self.vault_path))
+            published = poster.check_and_publish_approved()
+
+            # 2. Check scheduled queue for posts due
             queue_file = self.vault_path / 'Plans' / 'linkedin_posts_queue.json'
+            triggered = 0
 
-            if not queue_file.exists():
-                print("No posts scheduled")
-                return True
+            if queue_file.exists():
+                queue = json.loads(queue_file.read_text())
+                now = datetime.now()
+                updated_queue = []
 
-            queue = json.loads(queue_file.read_text())
-            now = datetime.now()
-            updated_queue = []
-            posted = 0
+                for post in queue:
+                    scheduled_time = datetime.fromisoformat(post['scheduled_time'])
 
-            for post in queue:
-                scheduled_time = datetime.fromisoformat(post['scheduled_time'])
+                    if post['status'] == 'pending' and scheduled_time <= now:
+                        # Time to post - create approval request via poster
+                        filepath = poster.create_draft_post(post['content'])
+                        post['status'] = 'pending_approval'
+                        post['approval_file'] = str(filepath)
+                        triggered += 1
 
-                if post['status'] == 'pending' and scheduled_time <= now:
-                    # Time to post - create approval request
-                    from linkedin_watcher import LinkedInWatcher
-                    watcher = LinkedInWatcher(vault_path=str(self.vault_path))
-                    result = watcher._create_post_approval(post['content'])
+                    updated_queue.append(post)
 
-                    post['status'] = 'pending_approval'
-                    post['approval_file'] = result.get('file')
-                    posted += 1
-
-                updated_queue.append(post)
-
-            # Save updated queue
-            queue_file.write_text(json.dumps(updated_queue, indent=2))
+                queue_file.write_text(json.dumps(updated_queue, indent=2))
 
             self._log('linkedin_post_check', 'success', {
-                'posts_triggered': posted
+                'posts_published': published,
+                'posts_triggered': triggered
             })
-            print(f"Triggered {posted} scheduled posts")
+            print(f"Published {published}, triggered {triggered} scheduled posts")
             return True
 
         except Exception as e:
             self._log('linkedin_post_check', 'error', {'error': str(e)})
             print(f"Error: {e}")
+            return False
+
+    def task_social_post_check(self):
+        """Check and generate scheduled social media posts for Facebook, Instagram, Twitter."""
+        print(f"[{datetime.now()}] Running: Social Media Post Check")
+
+        try:
+            from social_auto_poster import check_and_generate
+            count = check_and_generate(self.vault_path)
+
+            self._log('social_post_check', 'success', {
+                'posts_created': count
+            })
+            print(f"Social posts created for approval: {count}")
+            return True
+
+        except Exception as e:
+            self._log('social_post_check', 'error', {'error': str(e)})
+            print(f"Error: {e}")
+            return False
+
+    def task_vault_sync(self):
+        """Sync vault between local and cloud via git."""
+        print(f"[{datetime.now()}] Running: Vault Sync")
+
+        try:
+            sys.path.insert(0, str(self.vault_path / 'utils'))
+            from vault_sync import sync_vault
+            result = sync_vault()
+
+            self._log('vault_sync', result.get('status', 'unknown'), {
+                'changes_pushed': result.get('changes_pushed', 0),
+                'changes_pulled': result.get('changes_pulled', 0),
+                'details': result.get('details', '')
+            })
+            print(f"Vault sync: {result.get('status')} (pushed: {result.get('changes_pushed')}, pulled: {result.get('changes_pulled')})")
+            return result.get('status') != 'error'
+
+        except Exception as e:
+            self._log('vault_sync', 'error', {'error': str(e)})
+            print(f"Vault sync error: {e}")
+            return False
+
+    def task_zone_failover_check(self):
+        """Check zone health and trigger failover if needed."""
+        print(f"[{datetime.now()}] Running: Zone Failover Check")
+
+        try:
+            sys.path.insert(0, str(self.vault_path / 'utils'))
+            from work_zones import check_and_failover, get_active_zone
+            active = get_active_zone()
+            failover = check_and_failover()
+
+            if failover:
+                self._log('zone_failover_check', 'failover', {
+                    'from': failover['from_zone'],
+                    'to': failover['to_zone'],
+                    'reason': failover['reason']
+                })
+                print(f"FAILOVER: {failover['from_zone']} -> {failover['to_zone']}")
+            else:
+                self._log('zone_failover_check', 'healthy', {'active_zone': active})
+                print(f"Zone healthy: {active}")
+            return True
+
+        except Exception as e:
+            self._log('zone_failover_check', 'error', {'error': str(e)})
+            print(f"Zone check error: {e}")
             return False
 
     # ==================== Scheduler Methods ====================
@@ -369,7 +455,10 @@ period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}
             'health_check': self.task_health_check,
             'vault_cleanup': self.task_vault_cleanup,
             'weekly_report': self.task_weekly_report,
-            'linkedin_post_check': self.task_linkedin_post_check
+            'linkedin_post_check': self.task_linkedin_post_check,
+            'social_post_check': self.task_social_post_check,
+            'vault_sync': self.task_vault_sync,
+            'zone_failover_check': self.task_zone_failover_check
         }
 
         method = task_methods.get(task_name)
@@ -391,7 +480,10 @@ period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}
             'health_check': self.task_health_check,
             'vault_cleanup': self.task_vault_cleanup,
             'weekly_report': self.task_weekly_report,
-            'linkedin_post_check': self.task_linkedin_post_check
+            'linkedin_post_check': self.task_linkedin_post_check,
+            'social_post_check': self.task_social_post_check,
+            'vault_sync': self.task_vault_sync,
+            'zone_failover_check': self.task_zone_failover_check
         }
 
         for task_id, task_def in self.TASKS.items():

@@ -184,6 +184,8 @@ def create_linkedin_post_for_approval(content: str, vault_path: Path) -> Path:
     
     approval_content = f'''---
 type: linkedin_post
+action: linkedin_post
+platform: linkedin
 created: {timestamp.isoformat()}
 status: pending_approval
 auto_generated: true

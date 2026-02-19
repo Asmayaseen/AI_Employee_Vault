@@ -1,10 +1,10 @@
 """
 Odoo JSON-RPC Client
 
-Gold Tier Implementation: Uses Odoo's JSON-RPC API (Odoo 17+/19+ compatible)
+Gold Tier Implementation: Uses Odoo's JSON-RPC API (Odoo 18+ compatible)
 instead of XML-RPC, as required by the hackathon specification.
 
-Reference: https://www.odoo.com/documentation/19.0/developer/reference/external_api.html
+Reference: https://www.odoo.com/documentation/18.0/developer/reference/external_api.html
 """
 
 import json
@@ -39,7 +39,7 @@ class OdooJSONRPCClient:
     - Version info via 'common' service
 
     This replaces the previous XML-RPC implementation to comply
-    with the Gold Tier requirement for JSON-RPC (Odoo 19+ architecture).
+    with the Gold Tier requirement for JSON-RPC (Odoo 18+ architecture).
     """
 
     _request_id = 0

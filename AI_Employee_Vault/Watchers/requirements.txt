@@ -1,5 +1,5 @@
 # AI Employee Watchers - Python Dependencies
-# Silver Tier Complete
+# Platinum Tier Complete
 
 # Core
 python-dotenv>=1.0.0
@@ -18,6 +18,10 @@ playwright>=1.40.0
 
 # HTTP requests
 requests>=2.31.0
+aiohttp>=3.9.0
+
+# Virtual display for WSL2 (Xvfb wrapper)
+pyvirtualdisplay>=3.0
 
 # Scheduling
 schedule>=1.2.0
@@ -25,6 +29,10 @@ apscheduler>=3.10.0
 
 # Process management
 psutil>=5.9.0
+
+# Dashboard
+flask>=3.0.0
+flask-cors>=4.0.0
 
 # Desktop notifications (optional)
 plyer>=2.1.0

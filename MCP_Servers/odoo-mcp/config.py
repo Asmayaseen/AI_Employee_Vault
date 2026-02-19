@@ -49,7 +49,7 @@ class OdooConfig:
 
     @property
     def jsonrpc_url(self) -> str:
-        """Get JSON-RPC endpoint URL (Odoo 17+/19+)."""
+        """Get JSON-RPC endpoint URL (Odoo 18+)."""
         return f"{self.url}/jsonrpc"
 
     @property

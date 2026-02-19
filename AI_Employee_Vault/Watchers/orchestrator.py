@@ -98,6 +98,30 @@ class Orchestrator:
             script='approval_watcher.py',
             check_interval=5,
             required_env=[]
+        ),
+        'facebook': WatcherConfig(
+            name='Facebook Watcher',
+            script='facebook_watcher.py',
+            check_interval=300,
+            required_env=['META_ACCESS_TOKEN']
+        ),
+        'instagram': WatcherConfig(
+            name='Instagram Watcher',
+            script='instagram_watcher.py',
+            check_interval=300,
+            required_env=['INSTAGRAM_BUSINESS_ID']
+        ),
+        'twitter': WatcherConfig(
+            name='Twitter Watcher',
+            script='twitter_watcher.py',
+            check_interval=300,
+            required_env=['TWITTER_BEARER_TOKEN']
+        ),
+        'linkedin': WatcherConfig(
+            name='LinkedIn Watcher',
+            script='linkedin_watcher.py',
+            check_interval=300,
+            required_env=[]
         )
     }
 
@@ -121,9 +145,42 @@ class Orchestrator:
         # Health check interval
         self.health_check_interval = 30
 
+        # Zone routing (Platinum)
+        self._zone_router = None
+        try:
+            sys.path.insert(0, str(self.vault_path / 'utils'))
+            from work_zones import resolve_zone, get_active_zone
+            self._resolve_zone = resolve_zone
+            self._get_active_zone = get_active_zone
+            logger.info(f"Work zones loaded, active zone: {get_active_zone()}")
+        except ImportError:
+            self._resolve_zone = None
+            self._get_active_zone = None
+            logger.info("Work zones module not available, zone routing disabled")
+
         logger.info(f"Orchestrator initialized")
         logger.info(f"Vault path: {self.vault_path}")
         logger.info(f"Watchers directory: {self.watchers_dir}")
+
+    def should_handle_task(self, task_type: str) -> bool:
+        """Check if this agent should handle a given task type based on zone routing."""
+        if not self._resolve_zone:
+            return True  # No zones configured, handle everything
+
+        agent_name = os.getenv('AGENT_NAME', 'local')
+        target_zone = self._resolve_zone(task_type)
+
+        if target_zone == agent_name:
+            return True
+        if target_zone == 'both':
+            return True
+        # If routing says 'active', check if we are the active zone
+        active = self._get_active_zone()
+        if target_zone == active and agent_name == active:
+            return True
+
+        logger.debug(f"Task '{task_type}' routed to zone '{target_zone}', skipping (we are '{agent_name}')")
+        return False
 
     def _check_watcher_requirements(self, watcher_id: str) -> tuple[bool, str]:
         """Check if a watcher's requirements are met."""

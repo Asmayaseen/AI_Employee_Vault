@@ -1,6 +1,0 @@
-2026/02/08-15:55:38.863 1119 Reusing MANIFEST /mnt/d/Ai-Employee/AI_Employee_Vault/Watchers/.whatsapp_session/Default/Local Storage/leveldb/MANIFEST-000001
-2026/02/08-15:55:39.150 1119 Recovering log #3
-2026/02/08-15:55:39.189 1119 Reusing old log /mnt/d/Ai-Employee/AI_Employee_Vault/Watchers/.whatsapp_session/Default/Local Storage/leveldb/000003.log 
-2026/02/08-16:00:40.244 1122 Level-0 table #5: started
-2026/02/08-16:00:40.367 1122 Level-0 table #5: 21332 bytes OK
-2026/02/08-16:00:40.400 1122 Delete type=0 #3

@@ -23,6 +23,7 @@ Usage:
 import asyncio
 import json
 import logging
+import os
 import sys
 from typing import Any, Dict
 
@@ -209,12 +210,20 @@ TOOLS = {
 
 # ========== MCP Server ==========
 
+
+# Platinum: tools blocked in draft-only mode (Cloud agent cannot execute these)
+DRAFT_ONLY_BLOCKED_TOOLS = {'post_invoice', 'record_expense'}
+
+
 class OdooMCPServer:
     """MCP Server for Odoo integration via JSON-RPC."""
 
     def __init__(self):
         self.client = get_client()
+        self.draft_only = os.getenv('AGENT_MODE', '').lower() == 'draft_only'
+        self.agent_name = os.getenv('AGENT_NAME', 'local')
         logger.info(f"Initializing {MCP_SERVER_NAME} v{MCP_SERVER_VERSION} (JSON-RPC)")
+        logger.info(f"Agent mode: {'DRAFT-ONLY (Cloud)' if self.draft_only else 'FULL (Local)'}")
 
     async def handle_request(self, request: Dict) -> Dict:
         """Handle incoming MCP JSON-RPC request."""
@@ -257,6 +266,29 @@ class OdooMCPServer:
 
                 if tool_name not in TOOLS:
                     return self._error(request_id, f"Unknown tool: {tool_name}", -32601)
+
+                # Platinum: block irreversible tools in draft-only (Cloud) mode
+                if self.draft_only and tool_name in DRAFT_ONLY_BLOCKED_TOOLS:
+                    logger.warning(
+                        f"[DRAFT-ONLY] Blocked tool '{tool_name}' — "
+                        f"requires Local agent approval. Agent: {self.agent_name}"
+                    )
+                    return self._response(request_id, {
+                        'content': [{
+                            'type': 'text',
+                            'text': json.dumps({
+                                'status': 'blocked',
+                                'reason': 'draft_only_mode',
+                                'tool': tool_name,
+                                'message': (
+                                    f"Tool '{tool_name}' is blocked in draft-only mode. "
+                                    f"This action requires Local agent approval. "
+                                    f"Create an approval request in /Pending_Approval/accounting/ instead."
+                                ),
+                                'agent': self.agent_name
+                            }, indent=2)
+                        }]
+                    })
 
                 handler = TOOLS[tool_name]['handler']
                 result = await handler(tool_args)
