@@ -50,6 +50,7 @@ class TwitterAdapter(BaseSocialAdapter):
         self.base_url = self.config.api_base_url
         self._session: Optional[aiohttp.ClientSession] = None
         self._user_id: Optional[str] = None
+        self._username: Optional[str] = None
 
     @property
     def is_configured(self) -> bool:
@@ -138,7 +139,8 @@ class TwitterAdapter(BaseSocialAdapter):
         if not self.is_configured:
             return False
 
-        result = await self._api_call('users/me', use_bearer=True)
+        # users/me requires OAuth 1.0a User Context, not App-only Bearer token
+        result = await self._api_call('users/me', use_bearer=False)
 
         if 'errors' in result:
             logger.error(f"Authentication failed: {result['errors']}")
@@ -146,8 +148,9 @@ class TwitterAdapter(BaseSocialAdapter):
 
         user_data = result.get('data', {})
         self._user_id = user_data.get('id')
-        logger.info(f"Authenticated as: @{user_data.get('username')}")
-        return True
+        self._username = user_data.get('username', '')
+        logger.info(f"Authenticated as: @{self._username} (id={self._user_id})")
+        return bool(self._user_id)
 
     async def post_content(
         self,
@@ -245,7 +248,8 @@ class TwitterAdapter(BaseSocialAdapter):
             if limit:
                 params['max_results'] = min(limit, 100)
 
-            result = await self._api_call('dm_events', params=params, use_bearer=True)
+            # dm_events requires OAuth 1.0a User Context, not App-only Bearer token
+            result = await self._api_call('dm_events', params=params, use_bearer=False)
 
             if 'errors' in result:
                 logger.error(f"Error reading DMs: {result['errors']}")
@@ -343,10 +347,11 @@ class TwitterAdapter(BaseSocialAdapter):
 
         try:
             # Get user info
+            # users/me requires OAuth 1.0a User Context, not App-only Bearer token
             result = await self._api_call(
                 'users/me',
                 params={'user.fields': 'public_metrics'},
-                use_bearer=True
+                use_bearer=False
             )
 
             if 'data' in result:
