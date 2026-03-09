@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  odoo:
+    image: odoo:17.0
+    container_name: odoo-cloud
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "127.0.0.1:8069:8069"
+    environment:
+      - HOST=db
+      - USER=odoo
+      - PASSWORD=${ODOO_DB_PASSWORD:-odoo_secure_password}
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - odoo-config:/etc/odoo
+      - odoo-addons:/mnt/extra-addons
+    networks:
+      - odoo-net
+
+  db:
+    image: postgres:15-alpine
+    container_name: odoo-db-cloud
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=${ODOO_DB_PASSWORD:-odoo_secure_password}
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - pg-data:/var/lib/postgresql/data/pgdata
+    networks:
+      - odoo-net
+
+volumes:
+  odoo-data:
+  odoo-config:
+  odoo-addons:
+  pg-data:
+
+networks:
+  odoo-net:
+    driver: bridge

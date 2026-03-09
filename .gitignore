@@ -113,5 +113,24 @@ AI_Employee_Vault/Logs/*.json
 AI_Employee_Vault/Queued_Actions/*
 !AI_Employee_Vault/Queued_Actions/.gitkeep
 
+# Next.js build output
+AI_Employee_Vault/web-ui/.next/
+AI_Employee_Vault/web-ui/node_modules/
+
+# Plans (runtime output — 300+ generated files, not needed in repo)
+AI_Employee_Vault/Plans/PLAN_*.md
+
+# Debug screenshots from Playwright
+AI_Employee_Vault/Watchers/debug_*.png
+
+# Runtime state files
+AI_Employee_Vault/.processed_linkedin
+AI_Employee_Vault/Rejected/
+AI_Employee_Vault/Signals/
+AI_Employee_Vault/Updates/
+AI_Employee_Vault/In_Progress/
+AI_Employee_Vault/Logs/alerts/
+AI_Employee_Vault/Logs/health/
+
 # Keep folder structure but not contents
 !**/.gitkeep
