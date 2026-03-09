@@ -1,0 +1,28 @@
+{
+  "active_zone": "local",
+  "auto_failover": true,
+  "failover_threshold": 3,
+  "health_check_timeout": 5,
+  "zones": {
+    "local": {
+      "api_url": "http://localhost:9000",
+      "dashboard_url": "http://localhost:3000",
+      "description": "Local development environment"
+    },
+    "cloud": {
+      "api_url": "https://ai.example.com/api",
+      "dashboard_url": "https://ai.example.com",
+      "description": "Cloud production environment"
+    }
+  },
+  "routing_rules": {
+    "email_processing": "active",
+    "social_media": "active",
+    "approvals": "local",
+    "vault_operations": "local",
+    "system_monitoring": "both",
+    "whatsapp": "local",
+    "payments": "local",
+    "accounting": "active"
+  }
+}

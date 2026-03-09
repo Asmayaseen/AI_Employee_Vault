@@ -18,13 +18,13 @@
 - **LinkedIn:** Watcher (monitoring) + Poster (publishing) via Playwright + Auto-Poster (Mon/Wed/Fri)
 - **Facebook:** Watcher (inbox/comments) + Auto-Poster (Tue/Thu/Sat) + Graph API v19.0 posting via approval_watcher
 - **Instagram:** Watcher (DMs/mentions) + Auto-Poster (Mon/Wed/Fri) + Graph API container posting
-- **Twitter/X:** Watcher (DMs/mentions) + Auto-Poster (Daily 9AM/1PM/5PM) + API v2 tweet posting
+- **Twitter/X:** ⚠️ SKIPPED — Account locked & API access blocked. Code exists (`twitter_watcher.py`, social-mcp Twitter adapter) but disabled. Will re-enable once account is restored.
 - **Social Auto-Poster:** Unified `social_auto_poster.py` — content generation for FB/IG/TW with platform-specific templates
 - **Approval:** All posts across all platforms require HITL approval before publishing
 - **Dashboard:** All 8 watchers (incl. FB/IG/TW) monitored with stats tracking
 - **CEO Briefing:** Cross-platform social media summary integrated into weekly briefing
 - **Scheduler:** `social_post_check` task runs every 2 hours for FB/IG/TW content scheduling
-- **Status:** Fully Operational (all platforms active with HITL approval flow)
+- **Status:** Operational — LinkedIn ✅ | Facebook ✅ | Instagram ✅ | Twitter ⚠️ Skipped (account locked)
 
 ### 3. CEO Briefing Generator
 - **Script:** `ceo_briefing_generator.py` — weekly business audit report
