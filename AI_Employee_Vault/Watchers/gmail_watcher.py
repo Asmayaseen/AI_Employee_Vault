@@ -91,77 +91,49 @@ class GmailWatcher(BaseWatcher):
         self.processed_ids_file.write_text('\n'.join(self.processed_ids))
 
     def _authenticate(self):
-        """Authenticate with Gmail API."""
+        """Authenticate with Gmail API. Fails gracefully in headless/cloud environments."""
         creds = None
+        self.service = None
 
         # Load existing token
         if self.token_path.exists():
-            creds = Credentials.from_authorized_user_file(str(self.token_path), SCOPES)
+            try:
+                creds = Credentials.from_authorized_user_file(str(self.token_path), SCOPES)
+            except Exception as e:
+                self.logger.warning(f"Could not load token: {e}")
 
         # Refresh or get new credentials
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
-                self.logger.info("Refreshing expired credentials...")
-                creds.refresh(Request())
-            else:
-                if not self.credentials_path.exists():
-                    self.logger.error(f"credentials.json not found at {self.credentials_path}")
-                    self.logger.error("Please download from Google Cloud Console")
-                    raise FileNotFoundError(f"Missing {self.credentials_path}")
-
-                self.logger.info("Starting OAuth flow (browser will open)...")
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    str(self.credentials_path), SCOPES
-                )
-
-                # Try to open browser, fallback to manual if WSL/headless
                 try:
-                    creds = flow.run_local_server(port=0)
+                    self.logger.info("Refreshing expired credentials...")
+                    creds.refresh(Request())
+                    self.token_path.write_text(creds.to_json())
+                    self.logger.info("Token refreshed successfully")
                 except Exception as e:
-                    self.logger.warning(f"Could not open browser automatically: {e}")
-                    self.logger.info("")
-                    self.logger.info("=" * 70)
-                    self.logger.info("MANUAL AUTHENTICATION REQUIRED (WSL/Headless Environment)")
-                    self.logger.info("=" * 70)
-                    self.logger.info("")
+                    self.logger.error(f"Token refresh failed: {e}")
+                    self.logger.warning("Gmail watcher running without auth — will retry next cycle")
+                    return
+            else:
+                # No valid token — cannot authenticate in headless/cloud mode
+                self.logger.warning("No valid Gmail token found.")
+                self.logger.warning("Set GMAIL_TOKEN_JSON secret in HuggingFace Space settings.")
+                self.logger.warning("Gmail watcher running in degraded mode — skipping email checks.")
+                return
 
-                    # Generate authorization URL
-                    auth_url, _ = flow.authorization_url(prompt='consent')
-
-                    self.logger.info("Please follow these steps:")
-                    self.logger.info("")
-                    self.logger.info("1. Copy this URL and open it in your Windows browser:")
-                    self.logger.info("")
-                    print(f"\n{auth_url}\n")
-                    self.logger.info("")
-                    self.logger.info("2. Login to your Google account")
-                    self.logger.info("3. You'll see: 'Google hasn't verified this app'")
-                    self.logger.info("   - Click 'Advanced'")
-                    self.logger.info("   - Click 'Go to AI Employee (unsafe)'")
-                    self.logger.info("4. Click 'Allow' for Gmail permissions")
-                    self.logger.info("5. After authorization, you'll be redirected to a URL")
-                    self.logger.info("   Copy the FULL URL from browser address bar")
-                    self.logger.info("")
-                    self.logger.info("=" * 70)
-                    self.logger.info("")
-
-                    # Get authorization response URL from user
-                    redirect_url = input("Paste the full redirect URL here: ").strip()
-
-                    # Extract code from URL
-                    flow.fetch_token(authorization_response=redirect_url)
-                    creds = flow.credentials
-
-            # Save token
-            self.token_path.write_text(creds.to_json())
-            self.logger.info(f"Token saved to {self.token_path}")
-
-        # Build Gmail service
-        self.service = build('gmail', 'v1', credentials=creds)
-        self.logger.info("Gmail API authenticated successfully")
+        try:
+            self.service = build('gmail', 'v1', credentials=creds)
+            self.logger.info("Gmail API authenticated successfully")
+        except Exception as e:
+            self.logger.error(f"Gmail API build failed: {e}")
 
     def check_for_updates(self) -> list:
         """Check Gmail for unread important emails."""
+        if not self.service:
+            # Retry authentication in case token was written after startup
+            self._authenticate()
+            if not self.service:
+                return []
         try:
             # Query for unread emails (can customize query)
             # Options: is:unread, is:important, label:INBOX, from:specific@email.com
