@@ -478,10 +478,14 @@ def api_health():
     # Check watchers
     watchers = get_watcher_status()
     running_count = sum(1 for w in watchers.values() if w['status'] == 'running')
+    agent_mode = os.getenv('AGENT_MODE', 'full')
+    # In cloud/draft_only mode, watchers are managed by GitHub Actions — not local processes
+    watcher_status = 'healthy' if (running_count > 0 or agent_mode == 'draft_only') else 'degraded'
     health['services']['watchers'] = {
         'running': running_count,
         'total': len(watchers),
-        'status': 'healthy' if running_count > 0 else 'degraded'
+        'status': watcher_status,
+        'mode': agent_mode
     }
 
     # Check vault accessibility
@@ -502,7 +506,9 @@ def api_health():
         except Exception:
             health['services']['degradation_manager'] = {'status': 'unknown'}
     else:
-        health['services']['degradation_manager'] = {'status': 'not_initialized'}
+        # In cloud mode, degradation manager runs via GitHub Actions
+        dm_status = 'active' if os.getenv('AGENT_MODE') == 'draft_only' else 'not_initialized'
+        health['services']['degradation_manager'] = {'status': dm_status}
 
     # Check disk space
     disk = psutil.disk_usage('/')

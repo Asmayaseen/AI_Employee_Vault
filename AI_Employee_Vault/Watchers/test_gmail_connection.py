@@ -19,7 +19,7 @@ def test_gmail_connection():
 
     vault_path = Path(__file__).parent.parent
     credentials_path = vault_path / 'Watchers' / 'credentials' / 'credentials.json'
-    token_path = vault_path / 'Watchers' / 'token.json'
+    token_path = vault_path / 'Watchers' / 'credentials' / 'token.json'
 
     print("=" * 60)
     print("Gmail Connection Test")
