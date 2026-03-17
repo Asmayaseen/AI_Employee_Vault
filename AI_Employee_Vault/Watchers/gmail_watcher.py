@@ -46,9 +46,12 @@ class GmailWatcher(BaseWatcher):
         # Credentials paths
         self.credentials_path = Path(credentials_path or os.getenv(
             'GMAIL_CREDENTIALS_PATH',
-            self.vault_path / 'Watchers' / 'credentials.json'
+            str(self.vault_path / 'Watchers' / 'credentials' / 'credentials.json')
         ))
-        self.token_path = self.vault_path / 'Watchers' / 'token.json'
+        self.token_path = Path(os.getenv(
+            'GMAIL_TOKEN_PATH',
+            str(self.vault_path / 'Watchers' / 'credentials' / 'token.json')
+        ))
 
         # Track processed emails
         self.processed_ids_file = self.vault_path / '.processed_emails'

@@ -27,11 +27,11 @@ _creds_dir = WATCHERS_PATH / 'credentials'
 _creds_dir.mkdir(exist_ok=True)
 
 _gmail_token = os.getenv('GMAIL_TOKEN_JSON', '')
-if _gmail_token and not (_creds_dir / 'token.json').exists():
+if _gmail_token:
     (_creds_dir / 'token.json').write_text(_gmail_token)
 
 _gmail_creds = os.getenv('GMAIL_CREDENTIALS_JSON', '')
-if _gmail_creds and not (_creds_dir / 'credentials.json').exists():
+if _gmail_creds:
     (_creds_dir / 'credentials.json').write_text(_gmail_creds)
 
 # Import the Flask app from dashboard

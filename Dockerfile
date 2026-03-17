@@ -87,7 +87,10 @@ ENV TWITTER_ACCESS_TOKEN=${TWITTER_ACCESS_TOKEN}
 ENV TWITTER_ACCESS_SECRET=${TWITTER_ACCESS_SECRET}
 ENV TWITTER_BEARER_TOKEN=${TWITTER_BEARER_TOKEN}
 
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 EXPOSE 7860
 
-# Supervisor runs both processes
-CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/conf.d/ai-employee.conf"]
+# start.sh writes Gmail credentials then launches supervisord
+CMD ["/app/start.sh"]
