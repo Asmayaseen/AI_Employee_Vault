@@ -1,0 +1,77 @@
+version: "1"
+
+# AI Employee — Render.com Cloud Deployment
+# Free tier: 750 hrs/month web service + background worker
+# Deploy: connect GitHub repo → Render auto-deploys on push
+
+services:
+
+  # ── Flask Dashboard API ────────────────────────────────────────
+  - type: web
+    name: ai-employee-dashboard
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    healthCheckPath: /api/health
+    envVars:
+      - key: VAULT_PATH
+        value: /opt/render/project/src/AI_Employee_Vault
+      - key: AGENT_MODE
+        value: draft_only
+      - key: AGENT_NAME
+        value: cloud
+      - key: DRY_RUN
+        value: "false"
+      - key: PORT
+        value: "10000"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      # Set these in Render dashboard → Environment:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GMAIL_CLIENT_ID
+        sync: false
+      - key: GMAIL_CLIENT_SECRET
+        sync: false
+
+  # ── Cloud Agent Worker (always-on) ────────────────────────────
+  - type: worker
+    name: ai-employee-cloud-agent
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: |
+      pip install -r requirements.txt
+      playwright install chromium --with-deps
+    startCommand: python AI_Employee_Vault/Watchers/orchestrator.py
+    envVars:
+      - key: VAULT_PATH
+        value: /opt/render/project/src/AI_Employee_Vault
+      - key: AGENT_MODE
+        value: draft_only
+      - key: AGENT_NAME
+        value: cloud
+      - key: DRY_RUN
+        value: "false"
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GMAIL_CLIENT_ID
+        sync: false
+      - key: GMAIL_CLIENT_SECRET
+        sync: false
+      - key: ODOO_URL
+        sync: false
+      - key: ODOO_DB
+        sync: false
+      - key: ODOO_USERNAME
+        sync: false
+      - key: ODOO_PASSWORD
+        sync: false
+      - key: FACEBOOK_PAGE_TOKEN
+        sync: false
+      - key: TWITTER_BEARER_TOKEN
+        sync: false
