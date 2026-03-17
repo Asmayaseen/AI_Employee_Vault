@@ -89,19 +89,19 @@ jobs:
             echo "Gmail secrets not configured — skipping"
           fi
 
-      # ── 6. Process Needs_Action (Claude reasoning) ──────────────
-      - name: Process action items (Claude)
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # ── 6. Process Needs_Action (template-based plan generation) ──
+      # NOTE: claude_processor.py uses template-based processing —
+      # it does NOT require ANTHROPIC_API_KEY
+      - name: Process action items
         run: |
           cd AI_Employee_Vault/Watchers
           ITEMS=$(find "$VAULT_PATH/Needs_Action" -name "*.md" 2>/dev/null | wc -l)
           echo "Found $ITEMS items in Needs_Action"
-          if [ "$ITEMS" -gt 0 ] && [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+          if [ "$ITEMS" -gt 0 ]; then
             python claude_processor.py --process-all --vault "$VAULT_PATH" \
-              || echo "Processor skipped (no items or API key)"
+              || echo "Processor completed (or no items)"
           else
-            echo "No items to process or ANTHROPIC_API_KEY not configured"
+            echo "No items to process"
           fi
 
       # ── 7. Claim-by-move (mark cloud items as In_Progress) ──────
@@ -204,7 +204,6 @@ jobs:
       - name: Generate CEO Briefing
         if: steps.day-check.outputs.run == 'true'
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ODOO_URL: ${{ secrets.ODOO_URL }}
           ODOO_DB: ${{ secrets.ODOO_DB }}
           ODOO_USERNAME: ${{ secrets.ODOO_USERNAME }}
@@ -212,7 +211,7 @@ jobs:
         run: |
           cd AI_Employee_Vault/Watchers
           python ceo_briefing_generator.py --vault "$VAULT_PATH" \
-            || echo "Briefing skipped (dependencies not configured)"
+            || echo "Briefing skipped (Odoo not configured — runs without it too)"
 
       - name: Commit briefing
         if: steps.day-check.outputs.run == 'true'

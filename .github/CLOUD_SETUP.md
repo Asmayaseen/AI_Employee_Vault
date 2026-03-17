@@ -8,14 +8,16 @@ Two workflows run automatically:
 | `cloud-agent.yml` | Every 15 min | Process Needs_Action → Plans → Pending_Approval |
 | `health-monitor.yml` | Every 30 min | Check HuggingFace + Odoo, write health logs |
 
-## Required GitHub Secrets
+## GitHub Secrets (All Optional)
 
 Go to: **Settings → Secrets and variables → Actions → New repository secret**
 
+> `claude_processor.py` uses template-based plan generation — no AI API key needed.
+> The Cloud Agent runs fully without any secrets configured.
+
 | Secret | Required | Value |
 |--------|----------|-------|
-| `ANTHROPIC_API_KEY` | Yes | Your Anthropic API key |
-| `GMAIL_TOKEN_JSON` | Optional | Contents of `token.json` from Gmail OAuth setup |
+| `GMAIL_TOKEN_JSON` | Optional | Contents of `token.json` from Gmail OAuth |
 | `GMAIL_CREDENTIALS_JSON` | Optional | Contents of `credentials.json` from Google Cloud |
 | `ODOO_URL` | Optional | `https://your-odoo-server.com` |
 | `ODOO_DB` | Optional | `odoo` |
