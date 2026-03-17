@@ -127,7 +127,7 @@ git clone <repo-url>
 cd Ai-Employee
 
 # 2. Install Python dependencies
-pip install -r AI_Employee_Vault/Watchers/requirements.txt
+pip install -r requirements.txt
 playwright install chromium
 
 # 3. Configure environment

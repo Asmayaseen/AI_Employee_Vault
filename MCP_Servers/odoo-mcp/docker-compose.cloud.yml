@@ -1,0 +1,114 @@
+version: '3.8'
+
+# AI Employee — Cloud Odoo Community Deployment
+# Separate from local dev docker-compose.yml
+# Run with: docker compose -f docker-compose.cloud.yml up -d
+#
+# Container names use "cloud" suffix to avoid conflicts
+# with local dev containers
+
+services:
+  odoo-db-cloud:
+    image: postgres:16-alpine
+    container_name: odoo-db-cloud
+    env_file:
+      - /etc/ai-employee/odoo.env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-odoo}
+      POSTGRES_USER: ${POSTGRES_USER:-odoo}
+    volumes:
+      - odoo_cloud_db:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - odoo_cloud_net
+    # Internal only — not exposed to host
+    expose:
+      - "5432"
+
+  odoo-cloud:
+    image: odoo:18.0
+    container_name: odoo-cloud
+    depends_on:
+      odoo-db-cloud:
+        condition: service_healthy
+    env_file:
+      - /etc/ai-employee/odoo.env
+    environment:
+      HOST: odoo-db-cloud
+      PORT: "5432"
+      USER: ${POSTGRES_USER:-odoo}
+    volumes:
+      - odoo_cloud_data:/var/lib/odoo
+      - odoo_cloud_addons:/mnt/extra-addons
+      - ./odoo.conf:/etc/odoo/odoo.conf:ro
+    # Internal only — nginx proxies to it
+    expose:
+      - "8069"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8069/web/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 60s
+    networks:
+      - odoo_cloud_net
+    labels:
+      - "ai-employee.service=odoo"
+      - "ai-employee.tier=platinum"
+
+  # Odoo health sidecar — writes status to vault Logs/odoo_health.json
+  odoo-health-reporter:
+    image: python:3.11-alpine
+    container_name: odoo-health-reporter
+    depends_on:
+      odoo-cloud:
+        condition: service_started
+    environment:
+      ODOO_URL: http://odoo-cloud:8069
+      VAULT_PATH: /vault
+      CHECK_INTERVAL: "60"
+    volumes:
+      - ${VAULT_PATH:-/opt/ai-employee/AI_Employee_Vault}/Logs:/vault/Logs
+    command: >
+      sh -c "
+        pip install -q requests &&
+        python3 -c \"
+import time, json, os, requests
+from datetime import datetime, timezone
+odoo_url = os.getenv('ODOO_URL', 'http://odoo-cloud:8069')
+vault_logs = os.getenv('VAULT_PATH', '/vault/Logs')
+interval = int(os.getenv('CHECK_INTERVAL', 60))
+log_file = vault_logs + '/odoo_health.json'
+while True:
+    try:
+        r = requests.get(odoo_url + '/web/health', timeout=10)
+        status = 'healthy' if r.status_code == 200 else 'degraded'
+    except Exception as e:
+        status = 'unreachable'
+    entry = {'timestamp': datetime.now(timezone.utc).isoformat(), 'status': status, 'url': odoo_url}
+    with open(log_file, 'w') as f: json.dump(entry, f)
+    time.sleep(interval)
+\"
+      "
+    restart: unless-stopped
+    networks:
+      - odoo_cloud_net
+
+volumes:
+  odoo_cloud_db:
+    name: ai_employee_odoo_cloud_db
+  odoo_cloud_data:
+    name: ai_employee_odoo_cloud_data
+  odoo_cloud_addons:
+    name: ai_employee_odoo_cloud_addons
+
+networks:
+  odoo_cloud_net:
+    name: ai_employee_odoo_cloud
+    driver: bridge

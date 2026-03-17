@@ -1,10 +1,10 @@
-# AI Employee - Railway Cloud Deployment
+# AI Employee - Full Dependency List
 # Core
 python-dotenv>=1.0.0
 pyyaml>=6.0.1
 
 # File system watching
-watchdog>=3.0.0
+watchdog>=2.1.0
 
 # Gmail API
 google-api-python-client>=2.100.0
@@ -25,3 +25,9 @@ psutil>=5.9.0
 # Dashboard
 flask>=3.0.0
 flask-cors>=4.0.0
+
+# Browser automation (WhatsApp + LinkedIn watchers)
+playwright>=1.40.0
+
+# MCP Python SDK (social-mcp server)
+mcp>=0.9.0

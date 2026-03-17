@@ -26,10 +26,8 @@ services:
   web-ui:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.webui
     container_name: ai_employee_webui
-    command: ["node_modules/.bin/next", "start", "--port", "3000"]
-    working_dir: /app/AI_Employee_Vault/web-ui
     ports:
       - "3000:3000"
     environment:

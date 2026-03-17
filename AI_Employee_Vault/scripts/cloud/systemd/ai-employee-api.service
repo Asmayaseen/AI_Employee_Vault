@@ -6,9 +6,12 @@ After=network.target
 Type=simple
 User=ai-employee
 Group=ai-employee
-WorkingDirectory=/opt/ai-employee/AI_Employee_Vault
+WorkingDirectory=/opt/ai-employee
 EnvironmentFile=/etc/ai-employee/env
-ExecStart=/opt/ai-employee/venv/bin/python Watchers/dashboard.py
+Environment=DRY_RUN=false
+Environment=AGENT_MODE=draft_only
+Environment=AGENT_NAME=cloud
+ExecStart=/opt/ai-employee/venv/bin/python app.py
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal
