@@ -51,40 +51,49 @@ fi
 
 echo "[4/8] Installing dependencies..."
 cd "$INSTALL_DIR/AI_Employee_Vault/web-ui"
-sudo -u "$SERVICE_USER" npm install --production
+sudo -u "$SERVICE_USER" npm install --omit=dev
 
 cd "$INSTALL_DIR"
 sudo -u "$SERVICE_USER" python3 -m venv "$INSTALL_DIR/venv"
 sudo -u "$SERVICE_USER" "$INSTALL_DIR/venv/bin/pip" install -q \
-    -r "$INSTALL_DIR/AI_Employee_Vault/Watchers/requirements.txt"
+    -r "$INSTALL_DIR/requirements.txt"
 
-echo "[4b/8] Deploying Odoo Community (Docker)..."
+# Install Playwright browsers (needed for WhatsApp + LinkedIn watchers)
+sudo -u "$SERVICE_USER" "$INSTALL_DIR/venv/bin/playwright" install chromium --with-deps
+
+echo "[4b/8] Deploying Odoo Community on Cloud (Docker)..."
 ODOO_DIR="$INSTALL_DIR/MCP_Servers/odoo-mcp"
 if [ -d "$ODOO_DIR" ]; then
-    # Create Odoo data dirs with correct ownership
-    mkdir -p /opt/ai-employee-odoo/{filestore,db}
-    chown -R "$SERVICE_USER:$SERVICE_USER" /opt/ai-employee-odoo
-
-    # Generate Odoo master password if not set
-    ODOO_MASTER_PASS=$(openssl rand -hex 16)
-
     # Write Odoo env file (never synced to git)
     ODOO_ENV="/etc/ai-employee/odoo.env"
     if [ ! -f "$ODOO_ENV" ]; then
-        cat > "$ODOO_ENV" <<EOF
+        ODOO_MASTER_PASS=$(openssl rand -hex 16)
+        POSTGRES_PASS=$(openssl rand -hex 16)
+        cat > "$ODOO_ENV" <<ODOO_EOF
 ODOO_MASTER_PASSWORD=$ODOO_MASTER_PASS
-POSTGRES_PASSWORD=$(openssl rand -hex 16)
-EOF
+POSTGRES_PASSWORD=$POSTGRES_PASS
+POSTGRES_USER=odoo
+POSTGRES_DB=odoo
+ODOO_EOF
         chmod 600 "$ODOO_ENV"
         chown "$SERVICE_USER:$SERVICE_USER" "$ODOO_ENV"
-        echo "  [!] Odoo env written to $ODOO_ENV — save these credentials!"
+        echo "  [!] Odoo credentials written to $ODOO_ENV — save these!"
     fi
 
-    # Launch Odoo stack (detached, restart-always)
+    # Set VAULT_PATH so health reporter can find logs dir
+    export VAULT_PATH="$INSTALL_DIR/AI_Employee_Vault"
+
+    # Launch cloud Odoo stack (uses docker-compose.cloud.yml)
     cd "$ODOO_DIR"
-    sudo -u "$SERVICE_USER" docker compose pull --quiet
-    sudo -u "$SERVICE_USER" docker compose up -d
-    echo "  Odoo starting at http://localhost:8069 (may take 30s)"
+    sudo -u "$SERVICE_USER" \
+        VAULT_PATH="$VAULT_PATH" \
+        docker compose -f docker-compose.cloud.yml pull --quiet
+    sudo -u "$SERVICE_USER" \
+        VAULT_PATH="$VAULT_PATH" \
+        docker compose -f docker-compose.cloud.yml up -d
+    echo "  Odoo starting at http://localhost:8069 (internal, may take 60s)"
+    echo "  Health reporter writing to: $VAULT_PATH/Logs/odoo_health.json"
+    echo "  Public health check: https://$DOMAIN/odoo/health"
 else
     echo "  [WARN] $ODOO_DIR not found — skipping Odoo deployment"
 fi

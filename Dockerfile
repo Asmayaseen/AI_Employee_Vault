@@ -7,9 +7,10 @@ WORKDIR /app
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 # Copy only what's needed
+COPY app.py /app/app.py
 COPY AI_Employee_Vault/Watchers/ /app/AI_Employee_Vault/Watchers/
 COPY AI_Employee_Vault/.env.example /app/AI_Employee_Vault/.env.example
 COPY MCP_Servers/ /app/MCP_Servers/
@@ -31,8 +32,10 @@ ENV PYTHONUNBUFFERED=1
 ENV PORT=7860
 ENV AGENT_MODE=draft_only
 ENV AGENT_NAME=cloud
-ENV DRY_RUN=true
+# DRY_RUN=false so cloud agent CAN create approval/draft files
+# AGENT_MODE=draft_only ensures no direct sends/posts
+ENV DRY_RUN=false
 
 EXPOSE 7860
 
-CMD ["python", "/app/AI_Employee_Vault/Watchers/dashboard.py"]
+CMD ["python", "/app/app.py"]

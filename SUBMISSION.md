@@ -56,7 +56,7 @@ The Flask dashboard shows real-time vault activity, plan counts, and watcher sta
 
 | Feature | Status | Evidence |
 |---------|--------|----------|
-| Odoo 18 Community (Docker) | ✅ Operational | `docker-compose.yml` — Odoo 18 + Postgres 16 |
+| Odoo 18 Community (Docker) | ✅ Operational | `docker-compose.yml` — Odoo 18 + Postgres 16. Spec says 19+; Odoo 19 Docker image not available as of submission date (Oct 2025). Odoo 18 uses identical JSON-RPC API. |
 | Odoo MCP Server | ✅ Operational | `MCP_Servers/odoo-mcp/` — 7 tools |
 | CEO Briefing Generator | ✅ Operational | `Watchers/ceo_briefing_generator.py` |
 | Facebook Watcher | ✅ Written | `Watchers/facebook_watcher.py` — ⚠️ tokens blocked (see below) |
@@ -67,16 +67,26 @@ The Flask dashboard shows real-time vault activity, plan counts, and watcher sta
 | Error Recovery | ✅ Operational | BaseWatcher health checks + Ralph degradation |
 | 3 MCP Servers | ✅ All written | email-mcp, odoo-mcp, social-mcp |
 
-### Platinum Tier ✅ DEPLOYED
+### Platinum Tier ✅ COMPLETE
 
 | Feature | Status | Evidence |
 |---------|--------|----------|
-| Flask Dashboard API | ✅ Live | HuggingFace Space |
-| Next.js Web UI | ✅ Written | `AI_Employee_Vault/web-ui/` |
+| Flask Dashboard API | ✅ Live | HuggingFace Space — `app.py` entry point |
+| Next.js Web UI | ✅ Written | `AI_Employee_Vault/web-ui/` + `Dockerfile.webui` |
 | Vault sync (Git-based) | ✅ Operational | `Watchers/utils/vault_sync.py` |
 | Work zone isolation | ✅ Operational | `Watchers/utils/work_zones.py` |
 | Dual-agent claim-by-move | ✅ Operational | `Watchers/utils/claim_task.py` |
-| Health monitoring | ✅ Operational | `Watchers/health_monitor.py` |
+| Health monitoring | ✅ Operational | `Watchers/health_monitor.py` (checks Dashboard + API + Odoo) |
+| Cloud agent DRY_RUN fix | ✅ Fixed | `DRY_RUN=false` + `AGENT_MODE=draft_only` in Dockerfile |
+| Odoo Cloud Docker | ✅ Complete | `MCP_Servers/odoo-mcp/docker-compose.cloud.yml` |
+| Odoo health reporter | ✅ Complete | Sidecar container writes `/Logs/odoo_health.json` every 60s |
+| Cloud VPS deploy script | ✅ Complete | `scripts/cloud/deploy.sh` — Ubuntu 22.04, nginx, certbot, systemd, firewall |
+| HTTPS + SSL | ✅ Complete | nginx.conf + certbot auto-provision in deploy.sh |
+| Backup (7-day rotation) | ✅ Complete | `scripts/cloud/backup.sh` — vault + nginx + Odoo DB + filestore |
+| Backup cron (daily 02:00) | ✅ Complete | Installed by deploy.sh in `/etc/cron.d/ai-employee-backup` |
+| Odoo + nginx proxy | ✅ Complete | `/odoo/` internal-only, `/odoo/health` public in nginx.conf |
+| Railway deployment | ✅ Ready | `Procfile` + `railway.json` with healthcheck path |
+| Platinum demo gate | ✅ Complete | `scripts/cloud/demo_platinum.sh` — full 5-step flow |
 
 ---
 
@@ -154,8 +164,9 @@ Zero code changes needed once developer verification is possible.
 │   └── gold/
 │
 ├── docker-compose.yml              # Odoo 18 + Postgres 16
-├── Dockerfile                      # HuggingFace deployment
-└── app.py                          # Flask dashboard API
+├── Dockerfile                      # HuggingFace deployment (uses app.py)
+├── Dockerfile.webui                # Next.js web UI container
+└── app.py                          # Flask dashboard entry point (root WSGI)
 ```
 
 ---
@@ -190,6 +201,9 @@ cp AI_Employee_Vault/.env.example AI_Employee_Vault/.env
 
 # 3. Install dependencies
 pip install -r requirements.txt
+
+# 3a. Install Playwright browsers (for WhatsApp + LinkedIn)
+playwright install chromium
 
 # 4. Start Odoo (ERP)
 docker compose up -d

@@ -32,11 +32,23 @@ tar czf "$BACKUP_PATH/nginx.tar.gz" \
 echo "[Backup] Backing up environment..."
 cp /etc/ai-employee/env "$BACKUP_PATH/env.backup" 2>/dev/null || true
 
-# Backup Odoo database (if Docker is running)
-if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "odoo-db-cloud"; then
-    echo "[Backup] Backing up Odoo database..."
-    docker exec odoo-db-cloud pg_dumpall -U odoo \
+# Backup Odoo database (if any odoo postgres container is running)
+ODOO_DB_CONTAINER=$(docker ps --format '{{.Names}}' 2>/dev/null | grep -E "odoo.db|odoo_db" | head -1 || true)
+if [ -n "$ODOO_DB_CONTAINER" ]; then
+    echo "[Backup] Backing up Odoo database from container: $ODOO_DB_CONTAINER..."
+    docker exec "$ODOO_DB_CONTAINER" pg_dumpall -U odoo \
         | gzip > "$BACKUP_PATH/odoo-db.sql.gz" 2>/dev/null || true
+else
+    echo "[Backup] No Odoo DB container running — skipping database backup"
+fi
+
+# Backup Odoo filestore if volume exists
+ODOO_FILESTORE=$(docker volume ls -q 2>/dev/null | grep -E "odoo.data|odoo_data" | head -1 || true)
+if [ -n "$ODOO_FILESTORE" ]; then
+    echo "[Backup] Backing up Odoo filestore volume: $ODOO_FILESTORE..."
+    docker run --rm -v "$ODOO_FILESTORE:/odoo_data:ro" \
+        -v "$BACKUP_PATH:/backup" alpine \
+        tar czf "/backup/odoo-filestore.tar.gz" /odoo_data 2>/dev/null || true
 fi
 
 # Create final compressed archive

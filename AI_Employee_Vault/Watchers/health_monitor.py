@@ -40,7 +40,8 @@ SERVICES = {
         "critical": True,
     },
     "odoo": {
-        "url": os.environ.get("ODOO_URL", "http://localhost:8069") + "/web/login",
+        "url": os.environ.get("ODOO_HEALTH_URL",
+               os.environ.get("ODOO_URL", "http://localhost:8069") + "/web/health"),
         "name": "Odoo ERP",
         "critical": False,
     },
