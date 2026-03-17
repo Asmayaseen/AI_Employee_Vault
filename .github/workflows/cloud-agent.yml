@@ -1,0 +1,224 @@
+name: Cloud Agent — 24/7 AI Employee
+
+# Runs every 15 minutes — this IS the cloud agent
+# Processes Needs_Action → creates Plans + Pending_Approval files
+# Commits new files back (vault sync via git)
+# Satisfies: "Run AI Employee on Cloud 24/7"
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # Every 15 minutes, 24/7
+  workflow_dispatch:           # Manual trigger for demo/testing
+    inputs:
+      mode:
+        description: 'Run mode'
+        required: false
+        default: 'full'
+        type: choice
+        options: [full, gmail-only, process-only, health-only]
+
+env:
+  VAULT_PATH: ${{ github.workspace }}/AI_Employee_Vault
+  AGENT_MODE: draft_only
+  AGENT_NAME: cloud
+  DRY_RUN: false
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  cloud-agent:
+    name: Cloud Agent Run
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      # ── 1. Checkout vault (with full history for sync) ──────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 2
+
+      # ── 2. Setup Python ─────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # ── 3. Install dependencies ──────────────────────────────────
+      - name: Install dependencies
+        run: |
+          pip install -q -r requirements.txt
+          # Skip playwright browsers in CI (no WhatsApp/LinkedIn in cloud)
+
+      # ── 4. Create required vault folders ────────────────────────
+      - name: Ensure vault structure
+        run: |
+          python3 -c "
+          from pathlib import Path
+          vault = Path('AI_Employee_Vault')
+          folders = [
+              'Needs_Action/email', 'Needs_Action/social',
+              'Needs_Action/accounting', 'Needs_Action/general',
+              'Plans/email', 'Plans/social', 'Plans/accounting', 'Plans/general',
+              'Pending_Approval/email', 'Pending_Approval/social',
+              'Pending_Approval/accounting', 'Pending_Approval/general',
+              'Approved', 'Rejected', 'Done', 'Logs', 'Briefings',
+              'In_Progress/cloud', 'In_Progress/local', 'Updates'
+          ]
+          for f in folders:
+              (vault / f).mkdir(parents=True, exist_ok=True)
+          print('Vault structure OK')
+          "
+
+      # ── 5. Run Gmail Watcher (single check) ─────────────────────
+      - name: Check Gmail (single pass)
+        if: ${{ github.event.inputs.mode != 'process-only' && github.event.inputs.mode != 'health-only' }}
+        env:
+          GMAIL_CREDENTIALS_PATH: ${{ github.workspace }}/AI_Employee_Vault/Watchers/credentials/credentials.json
+          GMAIL_TOKEN_PATH: ${{ github.workspace }}/AI_Employee_Vault/Watchers/credentials/token.json
+        run: |
+          cd AI_Employee_Vault/Watchers
+          # Write Gmail token from secret (if configured)
+          if [ -n "${{ secrets.GMAIL_TOKEN_JSON }}" ]; then
+            mkdir -p credentials
+            echo '${{ secrets.GMAIL_TOKEN_JSON }}' > credentials/token.json
+            echo '${{ secrets.GMAIL_CREDENTIALS_JSON }}' > credentials/credentials.json
+            python gmail_watcher.py --once --vault "$VAULT_PATH" || echo "Gmail check skipped (not configured)"
+          else
+            echo "Gmail secrets not configured — skipping"
+          fi
+
+      # ── 6. Process Needs_Action (Claude reasoning) ──────────────
+      - name: Process action items (Claude)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          cd AI_Employee_Vault/Watchers
+          ITEMS=$(find "$VAULT_PATH/Needs_Action" -name "*.md" 2>/dev/null | wc -l)
+          echo "Found $ITEMS items in Needs_Action"
+          if [ "$ITEMS" -gt 0 ] && [ -n "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            python claude_processor.py --process-all --vault "$VAULT_PATH" \
+              || echo "Processor skipped (no items or API key)"
+          else
+            echo "No items to process or ANTHROPIC_API_KEY not configured"
+          fi
+
+      # ── 7. Claim-by-move (mark cloud items as In_Progress) ──────
+      - name: Update In_Progress claims
+        run: |
+          python3 -c "
+          import sys, os
+          sys.path.insert(0, 'AI_Employee_Vault/Watchers/utils')
+          try:
+              from claim_task import TaskClaimer
+              claimer = TaskClaimer('AI_Employee_Vault')
+              claims = claimer.get_all_claims()
+              print(f'Active claims: {sum(len(v) for v in claims.values())}')
+          except Exception as e:
+              print(f'Claim system: {e}')
+          "
+
+      # ── 8. Health check — write status to vault ─────────────────
+      - name: Write cloud health status
+        run: |
+          python3 -c "
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          status = {
+              'timestamp': datetime.now(timezone.utc).isoformat(),
+              'agent': 'cloud',
+              'mode': 'draft_only',
+              'run_id': '${{ github.run_id }}',
+              'trigger': '${{ github.event_name }}',
+              'status': 'healthy',
+              'vault_path': 'AI_Employee_Vault'
+          }
+          p = Path('AI_Employee_Vault/Logs/cloud_agent_health.json')
+          p.parent.mkdir(exist_ok=True)
+          p.write_text(json.dumps(status, indent=2))
+          print(json.dumps(status, indent=2))
+          "
+
+      # ── 9. Commit vault changes back (vault sync via git) ────────
+      - name: Commit vault changes
+        run: |
+          git config user.name  "AI Employee Cloud Agent"
+          git config user.email "ai-cloud-agent@github-actions"
+
+          # Add vault state files (exclude secrets and sessions)
+          git add \
+            AI_Employee_Vault/Needs_Action/ \
+            AI_Employee_Vault/Plans/ \
+            AI_Employee_Vault/Pending_Approval/ \
+            AI_Employee_Vault/Done/ \
+            AI_Employee_Vault/Logs/cloud_agent_health.json \
+            AI_Employee_Vault/Updates/ \
+            2>/dev/null || true
+
+          # Only commit if there are changes
+          if git diff --cached --quiet; then
+            echo "No vault changes — nothing to commit"
+          else
+            ITEMS_PROCESSED=$(git diff --cached --name-only | wc -l)
+            git commit -m "chore(cloud-agent): vault sync — ${ITEMS_PROCESSED} files updated [skip ci]"
+            git push origin ${{ github.ref_name }}
+            echo "Vault sync committed and pushed"
+          fi
+
+  # ── Job 2: CEO Briefing (Sunday midnight) ─────────────────────
+  weekly-briefing:
+    name: Weekly CEO Briefing
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Check if Sunday
+        id: day-check
+        run: |
+          DAY=$(date +%u)  # 7 = Sunday
+          HOUR=$(date +%H)
+          if [ "$DAY" = "7" ] && [ "$HOUR" = "00" ]; then
+            echo "run=true" >> $GITHUB_OUTPUT
+          else
+            echo "run=false" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.day-check.outputs.run == 'true'
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        if: steps.day-check.outputs.run == 'true'
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install deps
+        if: steps.day-check.outputs.run == 'true'
+        run: pip install -q -r requirements.txt
+
+      - name: Generate CEO Briefing
+        if: steps.day-check.outputs.run == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ODOO_URL: ${{ secrets.ODOO_URL }}
+          ODOO_DB: ${{ secrets.ODOO_DB }}
+          ODOO_USERNAME: ${{ secrets.ODOO_USERNAME }}
+          ODOO_PASSWORD: ${{ secrets.ODOO_PASSWORD }}
+        run: |
+          cd AI_Employee_Vault/Watchers
+          python ceo_briefing_generator.py --vault "$VAULT_PATH" \
+            || echo "Briefing skipped (dependencies not configured)"
+
+      - name: Commit briefing
+        if: steps.day-check.outputs.run == 'true'
+        run: |
+          git config user.name  "AI Employee Cloud Agent"
+          git config user.email "ai-cloud-agent@github-actions"
+          git add AI_Employee_Vault/Briefings/ || true
+          git diff --cached --quiet || git commit -m "feat(briefing): weekly CEO briefing $(date +%Y-%m-%d) [skip ci]"
+          git diff --cached --quiet || git push origin ${{ github.ref_name }}

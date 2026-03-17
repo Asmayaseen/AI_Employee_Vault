@@ -1,0 +1,104 @@
+name: Cloud Health Monitor
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # Every 30 minutes
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    name: System Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check HuggingFace Space
+        id: hf-check
+        run: |
+          HF_URL="https://asma-yaseen-ai-employee.hf.space/api/health"
+          HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" \
+            --max-time 15 "$HF_URL" 2>/dev/null || echo "000")
+          echo "http_code=$HTTP_CODE" >> $GITHUB_OUTPUT
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "HuggingFace Space: HEALTHY ($HTTP_CODE)"
+          else
+            echo "HuggingFace Space: DEGRADED ($HTTP_CODE)"
+          fi
+
+      - name: Check Odoo (if configured)
+        id: odoo-check
+        run: |
+          if [ -n "${{ secrets.ODOO_URL }}" ]; then
+            ODOO_HEALTH="${{ secrets.ODOO_URL }}/web/health"
+            HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" \
+              --max-time 15 "$ODOO_HEALTH" 2>/dev/null || echo "000")
+            echo "http_code=$HTTP_CODE" >> $GITHUB_OUTPUT
+            echo "Odoo health: $HTTP_CODE"
+          else
+            echo "ODOO_URL not configured — skipping"
+            echo "http_code=skip" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Write health report to vault
+        run: |
+          python3 -c "
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          hf_code = '${{ steps.hf-check.outputs.http_code }}'
+          odoo_code = '${{ steps.odoo-check.outputs.http_code }}'
+
+          report = {
+              'timestamp': datetime.now(timezone.utc).isoformat(),
+              'run_id': '${{ github.run_id }}',
+              'services': {
+                  'huggingface_space': {
+                      'url': 'https://asma-yaseen-ai-employee.hf.space',
+                      'http_code': hf_code,
+                      'status': 'healthy' if hf_code == '200' else 'degraded'
+                  },
+                  'odoo': {
+                      'http_code': odoo_code,
+                      'status': 'healthy' if odoo_code == '200' else ('skip' if odoo_code == 'skip' else 'degraded')
+                  }
+              }
+          }
+
+          overall = all(
+              s['status'] in ('healthy', 'skip')
+              for s in report['services'].values()
+          )
+          report['overall_healthy'] = overall
+
+          p = Path('AI_Employee_Vault/Logs/health')
+          p.mkdir(parents=True, exist_ok=True)
+          out = p / f'health_{datetime.now(timezone.utc).strftime(\"%Y-%m-%d\")}.jsonl'
+          with open(out, 'a') as f:
+              f.write(json.dumps(report) + '\n')
+
+          print(json.dumps(report, indent=2))
+          if not overall:
+              exit(1)
+          "
+
+      - name: Commit health log
+        if: always()
+        run: |
+          git config user.name  "AI Employee Health Monitor"
+          git config user.email "ai-health@github-actions"
+          git add AI_Employee_Vault/Logs/health/ || true
+          git diff --cached --quiet || \
+            git commit -m "chore(health): health check $(date +%H:%M) [skip ci]" && \
+            git push origin ${{ github.ref_name }} || true
+
+      - name: Alert on failure
+        if: failure()
+        run: |
+          echo "::warning::One or more services are DEGRADED. Check health logs."
+          echo "HuggingFace: ${{ steps.hf-check.outputs.http_code }}"
+          echo "Odoo: ${{ steps.odoo-check.outputs.http_code }}"

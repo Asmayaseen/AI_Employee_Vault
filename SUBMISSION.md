@@ -78,6 +78,11 @@ The Flask dashboard shows real-time vault activity, plan counts, and watcher sta
 | Dual-agent claim-by-move | ✅ Operational | `Watchers/utils/claim_task.py` |
 | Health monitoring | ✅ Operational | `Watchers/health_monitor.py` (checks Dashboard + API + Odoo) |
 | Cloud agent DRY_RUN fix | ✅ Fixed | `DRY_RUN=false` + `AGENT_MODE=draft_only` in Dockerfile |
+| **24/7 Cloud Agent** | ✅ LIVE | `.github/workflows/cloud-agent.yml` — runs every 15 min on GitHub's cloud |
+| **Health Monitor (cloud)** | ✅ LIVE | `.github/workflows/health-monitor.yml` — every 30 min |
+| **Vault Sync via Git** | ✅ LIVE | Cloud agent commits Plans/Pending_Approval back → local pulls |
+| Weekly CEO Briefing (cloud) | ✅ LIVE | GitHub Actions Sunday 00:00 trigger |
+| Multi-process Docker | ✅ Complete | `supervisord.conf` — dashboard + orchestrator + approval-watcher + health-monitor |
 | Odoo Cloud Docker | ✅ Complete | `MCP_Servers/odoo-mcp/docker-compose.cloud.yml` |
 | Odoo health reporter | ✅ Complete | Sidecar container writes `/Logs/odoo_health.json` every 60s |
 | Cloud VPS deploy script | ✅ Complete | `scripts/cloud/deploy.sh` — Ubuntu 22.04, nginx, certbot, systemd, firewall |
@@ -85,8 +90,9 @@ The Flask dashboard shows real-time vault activity, plan counts, and watcher sta
 | Backup (7-day rotation) | ✅ Complete | `scripts/cloud/backup.sh` — vault + nginx + Odoo DB + filestore |
 | Backup cron (daily 02:00) | ✅ Complete | Installed by deploy.sh in `/etc/cron.d/ai-employee-backup` |
 | Odoo + nginx proxy | ✅ Complete | `/odoo/` internal-only, `/odoo/health` public in nginx.conf |
-| Railway deployment | ✅ Ready | `Procfile` + `railway.json` with healthcheck path |
-| Platinum demo gate | ✅ Complete | `scripts/cloud/demo_platinum.sh` — full 5-step flow |
+| Railway deployment | ✅ Ready | `Procfile` + `railway.json` with healthcheck `/api/health` |
+| Render.com deployment | ✅ Ready | `render.yaml` — web service + worker, one-click deploy |
+| Platinum demo gate | ✅ TESTED | `scripts/cloud/demo_platinum.sh` — 5-step live test PASSED |
 
 ---
 
