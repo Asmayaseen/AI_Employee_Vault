@@ -18,41 +18,42 @@ def index():
 <head>
     <title>AI Employee Vault Dashboard</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 30px; }
-        .card { background: #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #334155; }
-        h1 { color: #38bdf8; margin-top: 0; }
-        .badge { background: #22c55e; color: #022c22; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
-        .metric { font-size: 28px; font-weight: bold; color: #f8fafc; margin: 10px 0; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b1329; color: #f8fafc; padding: 30px; }
+        .card { background: #152238; padding: 22px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #1e293b; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
+        h1 { color: #38bdf8; margin-top: 0; font-size: 26px; }
+        .badge { background: #10b981; color: #022c22; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+        .badge-standby { background: #64748b; color: #f8fafc; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 12px; }
+        .metric { font-size: 32px; font-weight: bold; margin: 10px 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #334155; }
-        th { color: #94a3b8; font-size: 13px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #1e293b; }
+        th { color: #94a3b8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
-    <h1>AI Employee Vault - Control Center</h1>
-    <p>Autonomous Operations OS powered by <strong>Google Gemini 2.5 Flash</strong></p>
+    <h1>⚡ AI Employee Vault — Control Center</h1>
+    <p style="color: #94a3b8; margin-top: -10px;">Autonomous Operations OS powered by <strong>Google Gemini 2.5 Flash</strong></p>
     
     <div class="grid">
         <div class="card">
             <div style="color: #94a3b8; font-size: 14px;">Core Intelligence Engine</div>
             <div class="metric" style="color: #38bdf8;">Gemini 2.5 Flash</div>
-            <span class="badge">ACTIVE & READY</span>
+            <span class="badge">ACTIVE &amp; READY</span>
         </div>
         <div class="card">
             <div style="color: #94a3b8; font-size: 14px;">Total Pilot Revenue</div>
-            <div class="metric" style="color: #22c55e;">.00</div>
+            <div class="metric" style="color: #10b981;">USD 196.00</div>
             <span class="badge">4 ACTIVE CLIENTS</span>
         </div>
         <div class="card">
             <div style="color: #94a3b8; font-size: 14px;">Autonomous Actions Executed</div>
-            <div class="metric">247</div>
+            <div class="metric" style="color: #f8fafc;">247</div>
             <span class="badge">100% AUDITED</span>
         </div>
     </div>
 
     <div class="card">
-        <h3>Real-Time Watchers and Automation Pipeline</h3>
+        <h3 style="margin-top: 0; color: #f1f5f9;">🤖 Real-Time Watchers &amp; Automation Pipeline</h3>
         <table>
             <tr>
                 <th>Watcher / Module</th>
@@ -61,22 +62,22 @@ def index():
                 <th>Assigned Role</th>
             </tr>
             <tr>
-                <td><strong>Gmail / Lead Watcher</strong></td>
+                <td><strong>Gmail / Inbound Lead Watcher</strong></td>
                 <td>Gemini 2.5 Flash</td>
                 <td><span class="badge">RUNNING</span></td>
-                <td>Inbound Sales & Triage</td>
+                <td>Inbound Sales &amp; Triage</td>
             </tr>
             <tr>
-                <td><strong>Vault Task Executor</strong></td>
+                <td><strong>Autonomous Vault Task Executor</strong></td>
                 <td>Gemini 2.5 Flash</td>
                 <td><span class="badge">RUNNING</span></td>
-                <td>Operations & CRM Actions</td>
+                <td>Operations &amp; CRM Updates</td>
             </tr>
             <tr>
                 <td><strong>Human-in-the-Loop Gateway</strong></td>
                 <td>Policy Validator</td>
-                <td><span class="badge">STANDBY</span></td>
-                <td>Financial & Contract Approval</td>
+                <td><span class="badge-standby">STANDBY</span></td>
+                <td>Financial &amp; Contract Approval</td>
             </tr>
         </table>
     </div>
@@ -88,11 +89,11 @@ def status():
     return jsonify({
         "status": "online",
         "engine": "Gemini 2.5 Flash",
-        "revenue": ".00",
+        "revenue": "196.00",
         "active_pilots": 4
     })
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5050))
-    print(f"Server starting on http://localhost:{port}")
+    print(f"Server starting on http://127.0.0.1:{port}")
     app.run(host='127.0.0.1', port=port, debug=False)
