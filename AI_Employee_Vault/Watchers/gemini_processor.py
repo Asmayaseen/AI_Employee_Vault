@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger("GeminiProcessor")
 
 class GeminiProcessor:
-    def __init__(self, api_key=None, model="gemini-2.5-flash"):
+    def __init__(self, api_key=None, model="gemini-flash-latest"):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY or GOOGLE_API_KEY must be set.")

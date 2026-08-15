@@ -18,8 +18,10 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 def authenticate_gmail():
     """Run OAuth flow and save token"""
 
-    credentials_path = Path('credentials/credentials.json')
-    token_path = Path('token.json')
+    # Support both running from Watchers/ or from project root
+    script_dir = Path(__file__).resolve().parent
+    credentials_path = script_dir / 'credentials' / 'credentials.json'
+    token_path = script_dir / 'credentials' / 'token.json'
 
     print("=" * 70)
     print("Gmail Authentication for WSL")
